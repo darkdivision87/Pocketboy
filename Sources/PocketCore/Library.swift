@@ -9,6 +9,11 @@ public enum Library {
         .blockDrop,
         .starInvaders,
         .rockBlaster,
+        .serpentine,
+        .roadHopper,
+        .mazeMuncher,
+        .caveFlap,
+        .mineSweeper,
         .pocketPong
     ]
 
