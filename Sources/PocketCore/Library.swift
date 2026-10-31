@@ -14,6 +14,7 @@ public enum Library {
         .mazeMuncher,
         .caveFlap,
         .mineSweeper,
+        .tinyQuest,
         .cratePusher,
         .turboLane,
         .kartRally64,
