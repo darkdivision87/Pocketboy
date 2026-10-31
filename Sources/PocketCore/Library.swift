@@ -3,6 +3,12 @@ import Foundation
 public enum Library {
     /// Every cartridge on the shelf, in display order.
     public static let all: [Cartridge] = [
+        .cappyLand,
+        .desertPrince,
+        .brickSmash,
+        .blockDrop,
+        .starInvaders,
+        .rockBlaster,
         .pocketPong
     ]
 

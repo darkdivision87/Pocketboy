@@ -14,6 +14,8 @@ public final class Console {
     /// Packed RGBA pixels (R in the low byte), `screenWidth * screenHeight` long.
     public private(set) var frame: [UInt32]
     public private(set) var frameCount = 0
+    /// Increments every time `frame` is rewritten; presenters compare it to skip identical frames.
+    public private(set) var renderCount = 0
     public private(set) var score = 0
     public private(set) var isBooting = false
     public var highScores: [String: Int] = [:]
@@ -122,6 +124,7 @@ public final class Console {
     }
 
     private func render() {
+        renderCount += 1
         if let b = boot {
             renderPixels(b)
             return
