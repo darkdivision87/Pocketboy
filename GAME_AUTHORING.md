@@ -36,6 +36,11 @@ Set `era: .n64` in the `Cartridge`. Override `drawTrueColor(_ b: TrueColorBuffer
 Colours are `TrueColorBuffer.rgb(r, g, b)` (0...255). Use `b.withPixels { ptr, w, h in ... }` for per-pixel renderers
 (floor/ray casters), and keep per-frame cost low (about 92k pixels). Classic mode converts the frame to four dithered shades automatically.
 
+## Eras
+
+`era:` is `.gb`, `.gbc`, `.nes` or `.n64`. `.gb`/`.gbc`/`.nes` are all 160x144 pixel carts and work in both display modes; `.nes` is a
+shelf label for NES-style games: bold saturated palettes, 16x16 / 8x8 sprites, side-scrolling action, and tight, fair, arcade-hard play.
+
 ## Registering
 
 At the bottom of the file:

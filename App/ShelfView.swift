@@ -5,6 +5,7 @@ enum ShelfFilter: String, CaseIterable, Identifiable {
     case all = "ALL"
     case gb = "GB"
     case gbc = "GBC"
+    case nes = "NES"
     case n64 = "64"
 
     var id: String { rawValue }
@@ -14,6 +15,7 @@ enum ShelfFilter: String, CaseIterable, Identifiable {
         case .all: return true
         case .gb: return cart.era == .gb
         case .gbc: return cart.era == .gbc
+        case .nes: return cart.era == .nes
         case .n64: return cart.era == .n64
         }
     }
