@@ -11,14 +11,12 @@ public struct Cartridge: Identifiable, Hashable {
     public enum Era: String, CaseIterable {
         case gb = "GB"
         case gbc = "GBC"
-        case nes = "NES"
         case n64 = "64"
 
         public var fullName: String {
             switch self {
             case .gb: return "Game Boy"
             case .gbc: return "Game Boy Color"
-            case .nes: return "Pocket NES"
             case .n64: return "Pocket 64"
             }
         }

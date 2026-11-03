@@ -177,7 +177,7 @@ let detailCart = null;
 function openDetail(c) {
   detailCart = c;
   $('#detailCart').innerHTML = cartHtml(c, true);
-  const names = { GB: 'Game Boy', GBC: 'Game Boy Color', NES: 'Pocket NES', '64': 'Pocket 64' };
+  const names = { GB: 'Game Boy', GBC: 'Game Boy Color', '64': 'Pocket 64' };
   $('#detailEra').textContent = names[c.era] || c.era;
   $('#detailBlurb').textContent = c.blurb;
   $('#detailControls').textContent = c.controls;
@@ -265,7 +265,7 @@ async function boot() {
     engine = await loadEngine(await resp.arrayBuffer());
     engine.ex.pb_init(44100);
     carts = engine.cartridges();
-    $('#chips').innerHTML = ['ALL', 'GB', 'GBC', 'NES', '64'].map((f) => `<button data-f="${f}" class="${f === filter ? 'on' : ''}">${f}</button>`).join('');
+    $('#chips').innerHTML = ['ALL', 'GB', 'GBC', '64'].map((f) => `<button data-f="${f}" class="${f === filter ? 'on' : ''}">${f}</button>`).join('');
     $('#chips').addEventListener('click', (e) => {
       const f = e.target.dataset && e.target.dataset.f;
       if (!f) return;
