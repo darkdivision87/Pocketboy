@@ -25,6 +25,8 @@ public enum Library {
         .turboLane,
         .kartRally64,
         .dungeon64,
+        .starWing64,
+        .tunnelRun64,
         .pocketPong
     ]
 
