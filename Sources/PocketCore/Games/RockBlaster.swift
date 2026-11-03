@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Asteroids-style vector shooter: rotate, thrust, fire, wrap, split rocks, dodge UFOs, hyperspace.
 final class RockBlaster: Game {

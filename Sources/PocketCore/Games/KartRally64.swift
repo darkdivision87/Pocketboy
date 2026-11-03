@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// KART RALLY 64: a Mode-7 style kart racer. Perspective floor drawn per scanline from a procedurally
 /// generated 512x512 true-colour track, billboarded karts / trees / signs, three laps against three rivals.

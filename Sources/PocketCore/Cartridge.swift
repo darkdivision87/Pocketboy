@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Metadata plus a factory for one game.
 public struct Cartridge: Identifiable, Hashable {

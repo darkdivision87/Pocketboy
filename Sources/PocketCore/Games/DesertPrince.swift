@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// A cinematic platformer in the spirit of the classic palace-dungeon escapes:
 /// flip-screen rooms, careful steps, running jumps, ledge climbs, loose floors, spikes, gates and sword duels.

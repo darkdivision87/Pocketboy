@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Alien-grid shooter with pixel-destructible shields, bombs, a bonus UFO and escalating waves.
 final class StarInvaders: Game {

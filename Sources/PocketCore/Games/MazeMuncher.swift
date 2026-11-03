@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Pac-style maze chase: 19x15 tiles of 8px, four ghosts with different brains.
 final class MazeMuncher: Game {

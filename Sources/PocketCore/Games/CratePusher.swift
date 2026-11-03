@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Sokoban: push every crate onto a goal. B undoes, SELECT restarts the level.
 final class CratePusher: Game {

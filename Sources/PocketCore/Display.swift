@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// The four-colour LCD tints available in Classic (2-bit) mode.
 public enum DMGTint: String, CaseIterable, Identifiable {

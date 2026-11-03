@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Cursor-driven minesweeper: 18x14 board of 8px cells, safe first dig, flood fill, chording, three difficulties.
 final class MineSweeper: Game {

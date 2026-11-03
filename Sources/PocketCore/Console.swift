@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// The virtual handheld. Insert a cartridge, call `tick` every display refresh, read `frame` to present.
 public final class Console {

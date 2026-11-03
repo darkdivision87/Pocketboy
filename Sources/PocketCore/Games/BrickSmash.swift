@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Breakout clone with angle-controlled paddle, hard bricks, steel bricks, power-ups and six layouts.
 final class BrickSmash: Game {

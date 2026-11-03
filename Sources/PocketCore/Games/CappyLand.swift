@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// A side-scrolling platformer in the classic handheld mould: run, jump, stomp, bump blocks, grab the mushroom, reach the flag.
 final class CappyLand: Game {

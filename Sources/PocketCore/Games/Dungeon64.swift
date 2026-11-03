@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// DUNGEON 64: a first-person textured raycasting dungeon crawler.
 /// DDA raycaster with 64x64 procedural wall textures, fogged floor/ceiling, billboard sprites with a per-column z-buffer,

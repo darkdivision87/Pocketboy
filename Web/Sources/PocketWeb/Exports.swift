@@ -1,4 +1,3 @@
-import Foundation
 import PocketCore
 
 // All state lives in these globals; JavaScript talks to it through the pb_* exports below.

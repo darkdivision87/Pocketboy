@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// An indexed-colour framebuffer (default 160x144). Every pixel is a palette index 0...31.
 /// All drawing is clipped, so out-of-range coordinates are always safe.

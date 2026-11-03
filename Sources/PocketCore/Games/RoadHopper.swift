@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Frogger-style crossing: dodge traffic, ride logs and turtles, fill all five bays.
 final class RoadHopper: Game {

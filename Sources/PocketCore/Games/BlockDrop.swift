@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Falling-block puzzle: 7 tetrominoes, 7-bag, wall kicks, ghost piece, line-clear flash.
 final class BlockDrop: Game {

@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Top-down vertical racer. Hold A to accelerate, B to brake, steer with the D-pad.
 /// Reach checkpoints for extra time, grab fuel, dodge rivals, oil, cones and trees.

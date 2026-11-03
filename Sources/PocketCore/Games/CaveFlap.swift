@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// One-button cave flyer: flap through stalactites and stalagmites, grab coins, earn medals.
 final class CaveFlap: Game {

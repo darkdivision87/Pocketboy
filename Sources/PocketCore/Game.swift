@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Base class for every cartridge. Override `update`, `draw` (pixel carts) or `drawTrueColor` (64 carts).
 /// `update` runs at a fixed 60 Hz; `draw` is called after each update.

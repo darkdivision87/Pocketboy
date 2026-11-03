@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 /// Top-down action adventure. A swings the sword, B throws the boomerang.
 /// Twelve hand-built screens: nine overworld rooms, two dungeon rooms and a boss lair.

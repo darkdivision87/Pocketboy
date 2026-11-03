@@ -1,4 +1,10 @@
-import Foundation
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+import WASILibc
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 public enum Wave {
     case pulse12, pulse25, pulse50, triangle, noise
@@ -118,7 +124,7 @@ public enum Tunes {
 /// A tiny four-voice-style chip synth: one effects voice plus one music voice.
 /// `render` is safe to call from an audio thread; `trigger` and `setTune` from any thread.
 public final class ChipSynth {
-    private let lock = NSLock()
+    private let lock = SimpleLock()
     private let rate: Float
 
     private var sfxNotes: [Sfx.Note] = []
@@ -244,4 +250,27 @@ public final class ChipSynth {
         tuneTimeLeft -= 1 / rate
         return sample
     }
+}
+
+/// Minimal mutex so the engine does not need Foundation (which would bloat the WebAssembly build by tens of megabytes).
+final class SimpleLock {
+#if os(WASI)
+    func lock() {}
+    func unlock() {}
+#else
+    private let mutex: UnsafeMutablePointer<pthread_mutex_t>
+
+    init() {
+        mutex = UnsafeMutablePointer<pthread_mutex_t>.allocate(capacity: 1)
+        pthread_mutex_init(mutex, nil)
+    }
+
+    deinit {
+        pthread_mutex_destroy(mutex)
+        mutex.deallocate()
+    }
+
+    func lock() { pthread_mutex_lock(mutex) }
+    func unlock() { pthread_mutex_unlock(mutex) }
+#endif
 }
