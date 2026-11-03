@@ -93,8 +93,8 @@ h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1px; }
   #console { flex-direction: row; flex-wrap: wrap; align-content: flex-start; padding-top: calc(var(--sat) + 4px); }
   .topbar { position: absolute; left: 0; right: 0; top: calc(var(--sat) + 4px); padding: 0 calc(var(--sal) + 18px); z-index: 3; width: auto; }
   .brand { display: none; } .topbar { justify-content: flex-end; }
-  .bezel { position: absolute; top: calc(var(--sat) + 36px); bottom: calc(var(--sab) + 6px); left: 50%; transform: translateX(-50%); width: auto; max-width: none; aspect-ratio: auto; padding: 6px 10px 8px; display: flex; flex-direction: column; }
-  .screen-wrap { flex: 1; width: auto; aspect-ratio: 10 / 9; min-height: 0; }
+  .bezel { position: absolute; top: calc(var(--sat) + 36px); left: 50%; transform: translateX(-50%); width: auto; max-width: none; aspect-ratio: auto; padding: 6px 10px 8px; display: flex; flex-direction: column; }
+  .screen-wrap { flex: none; width: auto; height: calc(100dvh - var(--sat) - var(--sab) - 96px); aspect-ratio: 10 / 9; }
   .controls { position: absolute; inset: 0; max-width: none; padding: 0; pointer-events: none; display: block; }
   .controls > * { pointer-events: auto; }
   .dpad { position: absolute; left: calc(var(--sal) + 28px); top: 50%; transform: translateY(-50%); width: min(30vh, 130px); }
