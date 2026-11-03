@@ -27,6 +27,8 @@ public enum Library {
         .dungeon64,
         .starWing64,
         .tunnelRun64,
+        .arena64,
+        .hoverRace64,
         .pocketPong
     ]
 
