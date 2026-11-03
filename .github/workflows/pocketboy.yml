@@ -1,0 +1,37 @@
+name: PocketBoy
+
+on:
+  push:
+    paths:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  engine:
+    name: Engine tests (headless play of every cartridge)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version
+      - name: Build and test PocketCore
+        working-directory: .
+        run: swift test -c release -Xswiftc -enable-testing
+
+  app:
+    name: iOS app build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: .
+        run: xcodegen generate
+      - name: Build for iOS Simulator
+        working-directory: .
+        run: |
+          set -o pipefail
+          xcodebuild -project PocketBoy.xcodeproj -scheme PocketBoy \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -n 150

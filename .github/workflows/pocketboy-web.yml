@@ -1,0 +1,71 @@
+name: PocketBoy Web
+
+on:
+  push:
+    paths:
+      - '**'
+      - '.github/workflows/pocketboy-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  SWIFT_VERSION: '6.4.2'
+  WASM_SDK_URL: https://download.swift.org/swift-6.4.2-release/wasm-sdk/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE_wasm.artifactbundle.tar.gz
+  WASM_SDK_CHECKSUM: 83baca83553f8c443cda7b84800912e6e709c3acd2e7ebf277794ca5836c0da5
+  WASM_SDK_ID: swift-6.4.2-RELEASE_wasm
+
+jobs:
+  web:
+    name: Build WebAssembly, test every cartridge, publish
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Swift toolchain with swiftly
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libxml2-dev libedit-dev libncurses-dev libsqlite3-dev libz3-dev pkg-config
+          curl -fsSLO "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz"
+          tar zxf "swiftly-$(uname -m).tar.gz"
+          ./swiftly init --quiet-shell-followup --assume-yes --skip-install
+          . "${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh"
+          swiftly install --use --assume-yes "$SWIFT_VERSION"
+          echo "${SWIFTLY_BIN_DIR:-$HOME/.local/share/swiftly/bin}" >> "$GITHUB_PATH"
+          swift --version
+          rm -f .swift-version
+
+      - name: Install the WebAssembly Swift SDK
+        run: |
+          swift sdk install "$WASM_SDK_URL" --checksum "$WASM_SDK_CHECKSUM"
+          swift sdk list
+
+      - name: Build wasm module
+        working-directory: Web
+        run: |
+          swift build --swift-sdk "$WASM_SDK_ID" -c release --product PocketWeb -Xswiftc -Osize
+          find .build -name 'PocketWeb.wasm' -print
+
+      - name: Assemble site
+        run: |
+          mkdir -p dist
+          cp Web/site/* dist/
+          cp "$(find Web/.build -name PocketWeb.wasm | head -n 1)" dist/pocketweb.wasm
+          touch dist/.nojekyll
+          ls -la dist
+
+      - name: Play every cartridge in the wasm build (Node)
+        run: node Web/test/smoke.mjs dist/pocketweb.wasm
+
+      - name: Publish to gh-pages
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: '41898282+github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy PocketBoy web build'

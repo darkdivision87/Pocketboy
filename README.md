@@ -26,7 +26,6 @@ Requirements: a Mac with Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/X
 
 ```sh
 brew install xcodegen
-cd PocketBoy
 xcodegen generate
 open PocketBoy.xcodeproj
 ```
@@ -36,7 +35,6 @@ Pick an iPhone or iPad simulator (or your device, after choosing a signing team 
 The engine is a separate Swift package (`PocketCore`) with no UIKit dependency:
 
 ```sh
-cd PocketBoy
 swift test -c release -Xswiftc -enable-testing
 ```
 
@@ -46,6 +44,11 @@ GitHub Actions (`.github/workflows/pocketboy.yml`) runs the tests and a simulato
 ## Adding a game
 
 Read [`GAME_AUTHORING.md`](GAME_AUTHORING.md), copy `Games/PocketPong.swift`, and add your cartridge to `Library.all`.
+
+## Play in a browser (iPhone friendly)
+
+The same engine compiles to WebAssembly (`Web/`). GitHub Actions builds it and publishes it to the `gh-pages` branch; enable
+Settings > Pages > Deploy from a branch > `gh-pages` / root, then open `https://<user>.github.io/PocketBoy/` and use Add to Home Screen.
 
 ## Status
 
