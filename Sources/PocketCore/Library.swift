@@ -29,6 +29,8 @@ public enum Library {
         .tunnelRun64,
         .arena64,
         .hoverRace64,
+        .skyGlider64,
+        .snowSlalom64,
         .pocketPong
     ]
 
