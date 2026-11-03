@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PocketBoy">
+<meta name="theme-color" content="#15171e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>PocketBoy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="loading"><div class="logo">POCKETBOY</div><div id="loadmsg">Loading cartridges...</div></div>
+
+<main id="shelf" hidden>
+  <header>
+    <h1>PocketBoy</h1>
+    <button id="shelfSettings" class="icon-btn" aria-label="Settings">&#9881;</button>
+  </header>
+  <div class="chips" id="chips"></div>
+  <div id="grid"></div>
+  <p class="foot" id="count"></p>
+</main>
+
+<section id="detail" hidden>
+  <div class="sheet">
+    <button id="detailClose" class="icon-btn close" aria-label="Close">&times;</button>
+    <div id="detailCart"></div>
+    <p class="era" id="detailEra"></p>
+    <p id="detailBlurb"></p>
+    <h3>Controls</h3>
+    <p id="detailControls"></p>
+    <button id="playBtn" class="primary">INSERT &amp; PLAY</button>
+  </div>
+</section>
+
+<section id="console" hidden>
+  <div class="topbar"><span class="brand">POCKETBOY</span><button id="menuBtn" class="chip">&#9776; MENU</button></div>
+  <div class="bezel">
+    <div class="bezel-top"><span class="led"></span><span>BATTERY</span><span class="sp"></span><span>PIXEL MATRIX + STEREO SOUND</span></div>
+    <div class="screen-wrap"><canvas id="screen" width="160" height="144"></canvas><div id="lcdgrid"></div></div>
+  </div>
+  <div class="controls">
+    <div class="dpad" id="dpad"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i></div>
+    <div class="pills">
+      <div class="pill" data-btn="128"><span></span>SELECT</div>
+      <div class="pill" data-btn="64"><span></span>START</div>
+    </div>
+    <div class="ab">
+      <div class="round b" data-btn="32">B</div>
+      <div class="round a" data-btn="16">A</div>
+    </div>
+    <div class="grille"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+  </div>
+</section>
+
+<section id="menu" hidden>
+  <div class="sheet">
+    <h2 id="menuTitle"></h2>
+    <p id="menuBest"></p>
+    <button id="resumeBtn" class="primary">RESUME</button>
+    <button id="restartBtn">RESTART</button>
+    <button id="settingsBtn">SETTINGS</button>
+    <button id="ejectBtn">EJECT CARTRIDGE</button>
+  </div>
+</section>
+
+<section id="settings" hidden>
+  <div class="sheet">
+    <button id="settingsClose" class="icon-btn close" aria-label="Close">&times;</button>
+    <h2>Settings</h2>
+    <h3>Color depth</h3>
+    <div class="seg" id="segColor"><button data-v="1">Color 15-bit</button><button data-v="0">Classic 2-bit</button></div>
+    <div id="tintRow"><h3>LCD tint</h3><div class="seg wrap" id="segTint"></div></div>
+    <label class="row"><span>LCD pixel grid</span><input type="checkbox" id="optGrid"></label>
+    <label class="row"><span>Sound</span><input type="checkbox" id="optSound"></label>
+    <h3>Shell color</h3>
+    <div class="swatches" id="swatches"></div>
+    <p class="note">Classic mode squeezes the picture to four shades like the first handhelds. Color mode uses 15-bit palettes like the Color model. 64 carts render in true color at double resolution. On iPhone, sound follows the ringer switch.</p>
+  </div>
+</section>
+
+<div id="error" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

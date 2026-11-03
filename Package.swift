@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "PocketCore",
+    name: "PocketBoy",
     platforms: [.iOS(.v16), .macOS(.v13)],
     products: [
         .library(name: "PocketCore", targets: ["PocketCore"])
