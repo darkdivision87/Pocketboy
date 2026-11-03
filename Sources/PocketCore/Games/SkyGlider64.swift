@@ -390,7 +390,7 @@ final class SkyGlider64: Game {
         }
         gx = bestX
         gy = bestY
-        alt = bestH + 40
+        alt = bestH + 85
         heading = Float(rng.int(628)) / 100.0
         pitch = 0
         bank = 0
@@ -529,7 +529,7 @@ final class SkyGlider64: Game {
         if input.dy != 0 {
             pitch += (climbIn * 0.5 - pitch) * 0.06
         } else {
-            pitch += (-0.04 - pitch) * 0.02
+            pitch += (-0.01 - pitch) * 0.02
         }
         if speed < 0.3 { pitch -= 0.006 }
         pitch = clamp(pitch, -0.55, 0.55)
@@ -565,7 +565,7 @@ final class SkyGlider64: Game {
         gy += fy * speed
         gx = gx - 256 * floor(gx / 256)
         gy = gy - 256 * floor(gy / 256)
-        alt += speed * sin(pitch) * 1.6 - 0.04
+        alt += speed * sin(pitch) * 1.6 - 0.02
         if alt > 240 { alt = 240 }
         if !alt.isFinite { alt = 120 }
         // terrain collision
