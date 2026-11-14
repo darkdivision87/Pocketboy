@@ -879,7 +879,7 @@ final class Dungeon64: Game {
         if input.b {
             moveS = Float(input.dx)
         } else {
-            angle = Dungeon64.wrapAngle(angle + Float(input.dx) * 0.05)
+            angle = Dungeon64.wrapAngle(angle + Float(input.dx) * 0.05 + touchTurn)
         }
         let dirX: Float = cos(angle)
         let dirY: Float = sin(angle)
@@ -932,7 +932,48 @@ final class Dungeon64: Game {
         play(.win)
     }
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchTurn: Float = 0
+    private var prevTouchX = 0
+    private var touchFire = 0
+    private var touchAuto = false
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchTurn = 0
+        if touch.began {
+            e.pressed.insert(.a)
+            prevTouchX = touch.x
+            touchAuto = false
+        }
+        if touch.tapped { touchFire = 2 }
+        if touch.longPressed { touchAuto = true }
+        if touch.down {
+            let d: Int = touch.x - prevTouchX
+            prevTouchX = touch.x
+            touchTurn = max(-0.15, min(0.15, Float(d) * 0.006))
+            if touch.y >= 192 {
+                e.held.insert(.up)
+            } else if touch.y < 58 {
+                e.held.insert(.down)
+            }
+            if touchAuto { e.held.insert(.a) }
+        } else {
+            touchAuto = false
+        }
+        if touchFire > 0 {
+            touchFire -= 1
+            e.held.insert(.a)
+        }
+        return e
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frame += 1
         switch phase {
         case .title:
