@@ -381,8 +381,9 @@ function updateCamera(dt) {
   let hx = 2.5, hy = 1.5, hz = -4.3, lyk = 1.0, lzk = 0.2;
   if (mode === 'shop') { hx = 1.9 + Math.sin(time * 0.5) * 0.6; hy = 1.25; hz = -3.4; lyk = 0.85; lzk = 0; }
   if (portrait && (mode !== 'play')) { hx *= 0.9; hz *= 1.25; hy += 0.3; }
-  tmpA.set(hx, hy, p.z + hz); tmpB.set(p.x * 0.6, ch, p.z + cd); camPos.copy(tmpA).lerp(tmpB, e); camPos.y += Math.sin(e * Math.PI) * 1.2;
-  tmpA.set(0, lyk, p.z + lzk); tmpB.set(p.x * 0.7, 1.35 + p.y * 0.35, p.z - 9); camLook.copy(tmpA).lerp(tmpB, e);
+  if (mode === 'over') { hx = portrait ? 4.2 : 5.6; hy = 2.0; hz = portrait ? 4.2 : 1.8; lyk = 0.8; lzk = -0.4; }
+  tmpA.set(p.x + hx, hy, p.z + hz); tmpB.set(p.x * 0.6, ch, p.z + cd); camPos.copy(tmpA).lerp(tmpB, e); camPos.y += Math.sin(e * Math.PI) * 1.2;
+  tmpA.set(p.x, lyk, p.z + lzk); tmpB.set(p.x * 0.7, 1.35 + p.y * 0.35, p.z - 9); camLook.copy(tmpA).lerp(tmpB, e);
   shake = Math.max(0, shake - dt * 2.4); const sh = shake * shake * 0.35;
   camera.position.set(camPos.x + (Math.random() - 0.5) * sh, camPos.y + (Math.random() - 0.5) * sh, camPos.z);
   camera.lookAt(camLook);
@@ -500,5 +501,5 @@ function frame(now) {
 // ---------- boot ----------
 resize(); world.ensure(0); lastIdx = 0; fox.setSkin(SKINS.find((s) => s.id === save.skin) || SKINS[0]);
 updateStatsUI(); updateMute(); $('oStarsChip').title = 'Stars';
-window.__fox = { p, R, rob, mode: () => mode, save, startRun, jump, roll, lane, bot, field, coins, world, die, pause, resume, showOver, startBoost, openShop, closeShop, teleport(d) { genZ = -d - 52; coins.clear(); field.clear(); resetWorldAt(-d); R.dist = d; while (genZ > p.z - 190) genSegment(); }, setStars(n) { save.stars = n; } };
+window.__fox = { music, p, R, rob, mode: () => mode, save, startRun, jump, roll, lane, bot, field, coins, world, die, pause, resume, showOver, startBoost, openShop, closeShop, teleport(d) { genZ = -d - 52; coins.clear(); field.clear(); resetWorldAt(-d); R.dist = d; while (genZ > p.z - 190) genSegment(); }, setStars(n) { save.stars = n; } };
 requestAnimationFrame(frame);

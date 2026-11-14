@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { toonGradient } from './fox.js';
 
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
 export const LANE_W = 2.2, TILE = 24, TILES_PER_BIOME = 38, BIOME_LEN = TILE * TILES_PER_BIOME;
 export const U = { uBendY: { value: 0.0009 }, uBendX: { value: 0 }, uSpin: { value: 0 } };
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -295,7 +296,8 @@ export class World {
   atmosphere(pz, dt, camera, time) {
     const cur = this.cur, w = this._w; weights(pz - 70, w);
     const a = this.atmInit ? Math.min(1, dt * 1.6) : 1; this.atmInit = true;
-    const tgt = { top: new THREE.Color(0, 0, 0), mid: new THREE.Color(0, 0, 0), bot: new THREE.Color(0, 0, 0), fog: new THREE.Color(0, 0, 0), hemiS: new THREE.Color(0, 0, 0), hemiG: new THREE.Color(0, 0, 0), sun: new THREE.Color(0, 0, 0) };
+    const tgt = this.tgt || (this.tgt = { top: new THREE.Color(), mid: new THREE.Color(), bot: new THREE.Color(), fog: new THREE.Color(), hemiS: new THREE.Color(), hemiG: new THREE.Color(), sun: new THREE.Color() });
+    for (const n in tgt) tgt[n].setRGB(0, 0, 0);
     let sunI = 0, hemiI = 0, stars = 0, bloom = 0;
     for (let b = 0; b < 3; b++) { const B = BIOMES[b], k = w[b]; if (k <= 0) continue; for (const n in tgt) { tgt[n].r += B[n + 'C'].r * k; tgt[n].g += B[n + 'C'].g * k; tgt[n].b += B[n + 'C'].b * k; } sunI += B.sunI * k; hemiI += B.hemiI * k; stars += B.stars * k; bloom += B.bloom * k; }
     for (const n in tgt) cur[n].lerp(tgt[n], a); cur.sunI += (sunI - cur.sunI) * a; cur.hemiI += (hemiI - cur.hemiI) * a; cur.stars += (stars - cur.stars) * a; cur.bloom += (bloom - cur.bloom) * a;

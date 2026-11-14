@@ -567,6 +567,7 @@ function fire() {
   run.cool = W.rate[lv] / (run.rapid > 0 ? 2 : 1);
   kick = 1; flashT = 0.07; flash.visible = true; flash.material.color.setHex(W.color); flash.scale.setScalar(rand(0.45, 0.7) * (W === WEAPONS.mega ? 1.6 : 1));
   sfx(W === WEAPONS.mega ? 'laser' : 'shoot', { volume: 0.55, pitch: W === WEAPONS.twin ? 1.2 : W === WEAPONS.mega ? 0.6 : 1 });
+  run.shots = (run.shots || 0) + 1;
   if (!firedOnce) { firedOnce = true; hintT = Math.min(hintT, 2.5); }
 }
 
@@ -919,7 +920,7 @@ function toTitle() { state = 'title'; resetRun(); $('hud').classList.add('hidden
 function pauseGame() { if (state !== 'playing') return; state = 'paused'; showScreen('pause'); try { music.duck(0.4, 99); } catch (e) { /* ignore */ } fireBtnDown = false; pts.clear(); $('fireBtn').classList.remove('down'); sfx('click'); }
 function resumeGame() { if (state !== 'paused') return; state = 'playing'; showScreen(''); try { music.duck(1, 0.1); } catch (e) { /* ignore */ } sfx('click'); }
 function gameOver() {
-  state = 'over'; overT = 1.6; run.over = true; fireBtnDown = false; pts.clear(); $('fireBtn').classList.remove('down');
+  state = 'over'; overT = 1.6; run.over = true; setTimeout(() => { if (state === 'over' && !shopOpen()) showOver(); }, 1500); fireBtnDown = false; pts.clear(); $('fireBtn').classList.remove('down');
   if (run.score > save.best) save.best = run.score; if (run.wave > save.bestWave) save.bestWave = run.wave; persist(); sfx('lose'); playTheme('calm', 0.2); $('hint').classList.remove('on'); $('bossBox').classList.remove('on'); $('bubble').classList.remove('on');
 }
 function showOver() {
@@ -959,7 +960,7 @@ const SENS = 0.0052;
 stage.addEventListener('pointerdown', (e) => {
   if (state !== 'playing') return; try { music.unlock(); } catch (er) { /* ignore */ } e.preventDefault();
   try { stage.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
-  pts.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now(), moved: false, fire: false });
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: e.timeStamp || performance.now(), moved: false, fire: false });
 });
 stage.addEventListener('pointermove', (e) => {
   const p = pts.get(e.pointerId); if (!p || state !== 'playing') return;
@@ -970,7 +971,7 @@ stage.addEventListener('pointermove', (e) => {
 function look(dx, dy) { const f = lockE ? 0.55 : 1; const k = SENS * (innerHeight > innerWidth ? 1.15 : 1); yaw -= dx * k * f; pitch = clamp(pitch - dy * k * 0.85 * f, -0.6, 0.9); }
 function endPtr(e) {
   const p = pts.get(e.pointerId); if (!p) return; pts.delete(e.pointerId);
-  if (e.type !== 'pointercancel' && !p.moved && !p.fire && performance.now() - p.t < 300 && state === 'playing') { tapBuf = 0.25; }
+  if (e.type !== 'pointercancel' && !p.moved && !p.fire && (e.timeStamp || performance.now()) - p.t < 300 && state === 'playing') { tapBuf = 0.25; }
 }
 stage.addEventListener('pointerup', endPtr); stage.addEventListener('pointercancel', endPtr);
 const fb = $('fireBtn');
@@ -1039,7 +1040,7 @@ function frame(now) {
   if (state !== 'paused') {
     tAll += dt;
     if (state === 'playing') updateGame(dt); else if (state === 'title') updateTitle(dt);
-    else if (state === 'over') { updateEnemies(dt * 0.3); updateProjectiles(dt); updateOrbs(dt); overT -= dt; if (overT <= 0 && $('over').classList.contains('show') === false && !shopOpen()) showOver(); }
+    else if (state === 'over') { updateEnemies(dt * 0.3); updateProjectiles(dt); updateOrbs(dt); }
     if (state === 'victory') { updatePickups(dt); }
     confetti.update(dt); starsP.update(dt); boltsP.update(dt); updateFx(dt); updateAmbient(tAll, dt);
     updateFloaters(dt);

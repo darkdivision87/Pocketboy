@@ -511,7 +511,7 @@ document.addEventListener('touchmove', (e) => { if (!e.target.closest('.sheet'))
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && !G.over && !T.paused && !modalEl.classList.contains('show')) openPause(); });
 
 // ---------- loop ----------
-window.__tt = { noRender: qs.has('norender'), world, T, get G() { return G; }, set G(v) {}, force: null, netWorth, music, endGame: (w) => endGame(w ? G.players[w] : null), gain: (i, n) => gain(G.players[i], n) };
+window.__tt = { noRender: qs.has('norender'), world, T, get G() { return G; }, set G(v) {}, force: null, doUpgrade: (p, i, f) => doUpgrade(G.players[p], i, f), buy: (p, i) => doBuy(G.players[p], i), giveSticker: (p) => giveSticker(G.players[p]), wheel: (p) => wheelGame(G.players[p], 'game'), openPause, openAlbum, openGoals, tapInfo, netWorth, music, endGame: (w) => endGame(w ? G.players[w] : null), gain: (i, n) => gain(G.players[i], n) };
 let last = performance.now(), ema = 0.016, slow = 0; const adapt = !qs.has('noadapt') && !qs.has('lite');
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000); last = now;

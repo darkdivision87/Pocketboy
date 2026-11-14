@@ -65,9 +65,9 @@ const FX = {
       if (rays > 0.001) {
         vec2 d = (sunUV - vUv); vec2 stp = d / 14.; vec2 p = vUv + stp * fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453);
         vec3 acc = vec3(0.); float w = 1.;
-        for (int i = 0; i < 14; i++) { p += stp; vec3 s = min(texture2D(tDiffuse, p).rgb, vec3(3.0)); float l = max(0., dot(s, vec3(.3, .55, .15)) - 1.0); acc += s * l * w; w *= 0.9; }
+        for (int i = 0; i < 14; i++) { p += stp; vec3 s = min(texture2D(tDiffuse, p).rgb, vec3(3.0)); float l = max(0., dot(s, vec3(.3, .55, .15)) - 1.25); acc += s * l * w; w *= 0.9; }
         float fall = 1.0 / (1.0 + 2.0 * length(d * vec2(aspect, 1.)));
-        col += acc * rays * 0.05 * fall;
+        col += acc * rays * 0.03 * fall;
       }
       float r = length(c * vec2(aspect * 0.6 + 0.4, 1.));
       col *= 1.0 - vig * smoothstep(0.35, 0.95, r);

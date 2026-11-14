@@ -89,7 +89,7 @@ function cloudGeo(rng) {
   }
   const g = mergeGeometries(parts, false); parts.forEach((p) => p.dispose());
   const pa = g.attributes.position, ca = g.attributes.color;
-  for (let i = 0; i < pa.count; i++) { const k = clamp(0.7 + pa.getY(i) * 0.5, 0.66, 1.0); ca.setXYZ(i, k, k, k * 1.03); }
+  for (let i = 0; i < pa.count; i++) { const k = clamp(0.84 + pa.getY(i) * 0.4, 0.8, 1.0); ca.setXYZ(i, k, k, k * 1.03); }
   return g;
 }
 
@@ -162,7 +162,7 @@ export class World {
     this.lagoonCol = new THREE.Color(sea.lagoon);
     // clouds
     const cg = [cloudGeo(rng), cloudGeo(rng), cloudGeo(rng)];
-    this.cloudMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, color: course.cloudCol, emissive: course.cloudCol, emissiveIntensity: 0.5, transparent: course.id === 'space', opacity: course.id === 'space' ? 0.5 : 1 });
+    this.cloudMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, color: course.cloudCol, emissive: course.cloudCol, emissiveIntensity: 0.7, transparent: course.id === 'space', opacity: course.id === 'space' ? 0.5 : 1 });
     this.cloudMeshes = cg.map((g) => { const m = new THREE.InstancedMesh(g, this.cloudMat, 14); m.frustumCulled = false; m.count = 0; this.group.add(m); return m; });
     this.clouds = []; for (let i = 0; i < 30; i++) this.clouds.push({ x: 0, y: 100, z: 0, s: 30, v: i % 3, grow: 1, rot: 0 });
     // rainbows

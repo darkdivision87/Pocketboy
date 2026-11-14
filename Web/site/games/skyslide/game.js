@@ -51,7 +51,7 @@ function setMute(m) {
 // =================================================================== renderer / scene
 const canvas = $('#gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', stencil: false });
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
 let pr = Math.min(window.devicePixelRatio || 1, 2); if (qs.get('pr')) pr = parseFloat(qs.get('pr'));
 const prMax = pr; let adaptOn = !qs.has('fixed'); let raysOn = true;
 renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight);
@@ -137,7 +137,6 @@ function loadCourse(id) {
   V1.copy(F.p); V1.y = 0; world.populate(V1, V2.set(F.T.x, 0, F.T.z).normalize());
   world.pillarFoam = path.pillars; world.addPillarFoam(path.pillars);
   resetRun(); camSnap = true;
-  buildFlightProps();
 }
 
 // =================================================================== flight props (rings, balloons, rainbow gates, pools)
@@ -167,11 +166,10 @@ const balloons = []; let balloonMesh = null;
   const parts = [sp, kn, st].map((g) => { const gg = g.index ? g.toNonIndexed() : g; gg.deleteAttribute('uv'); const n = gg.attributes.position.count, a = new Float32Array(n * 3).fill(g === st ? 0.9 : 1); gg.setAttribute('color', new THREE.BufferAttribute(a, 3)); return gg; });
   import('three/addons/utils/BufferGeometryUtils.js').then((m) => {
     const geo = m.mergeGeometries(parts, false);
-    balloonMesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.22, metalness: 0.05, emissive: 0x222222 }), 48); balloonMesh.frustumCulled = false; balloonMesh.count = 0; balloonMesh.setColorAt(0, new THREE.Color(1, 1, 1)); flightGroup.add(balloonMesh);
+    balloonMesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.25, metalness: 0.0, emissive: 0x333333, color: 0xffffff }), 48); balloonMesh.material.color.setScalar(1.5); balloonMesh.frustumCulled = false; balloonMesh.count = 0; balloonMesh.setColorAt(0, new THREE.Color(1, 1, 1)); flightGroup.add(balloonMesh);
   });
 }
 const BCOL = [0xff4d6d, 0xffd23f, 0x35e0ff, 0x6bff7a, 0xc062ff, 0xff8a2a].map((h) => new THREE.Color(h));
-function buildFlightProps() { /* props are shared across courses; colours of gems set elsewhere */ }
 
 // =================================================================== state
 let state = 'title', paused = false, timeScale = 1, time = 0;
@@ -181,11 +179,10 @@ const fl = { x: 0, y: 0, z: 0, px: 0, py: 0, pz: 0, yaw: 0, th: 0, v: 0, bank: 0
 const run = { gems: 0, score: 0, dist: 0, mult: 1, pool: null, poolZone: -1, stars: 0, beach: false, daily: false };
 let landTimer = 0, flapCool = 0, hintTimer = 0, cdNum = 0, cdTimer = 0, orbitT = 0, menuLook = 0, menuSide = 0, frng = mulberry(1), launchSlow = 0, camBlend = 0;
 let courseSel = save.last || 'island';
-const sparkLevel = { v: 0 };
 
 function resetRun() {
   if (!items) return;
-  items.gems.forEach((g) => { g.alive = true; g.fly = 0; path.surf(g.s, g.u === undefined ? 0 : g.u, 0, V1); });
+  items.gems.forEach((g) => { g.alive = true; g.fly = 0; });
   // restore gem positions (magnet moves them)
   items.gems.forEach((g) => { if (g.ox === undefined) { g.ox = g.x; g.oy = g.y; g.oz = g.z; } else { g.x = g.ox; g.y = g.oy; g.z = g.oz; } });
   items.bumpers.forEach((b, i) => { b.hit = false; bumperMesh.setMatrixAt(i, b.m); }); bumperMesh.instanceMatrix.needsUpdate = true;
@@ -401,7 +398,7 @@ function startFlight() {
   fl.ox = fl.x; fl.oz = fl.z; fl.launchY = fl.y;
   fl.th = Math.asin(clamp(F.T.y, -1, 1)); fl.v = sl.v * 1.12 + 8 + save.up.speed; fl.yaw = 0; fl.bank = 0; fl.lift = 0; fl.dive = 0;
   fl.maxFlaps = 3 + save.up.glide; fl.flaps = fl.maxFlaps; fl.f = 0; fl.l = 0; fl.rings = 0; fl.balloons = 0; fl.skips = 0; fl.hoops = 0; fl.chain = 0; fl.flapAnim = 0; fl.prevF = 0; fl.shake = 0;
-  fl.guideY = fl.y + 22; fl.guideL = 0; fl.nextF = 85; fl.poolNext = 430; fl.maxY = fl.y; fl.lastRingF = 0;
+  fl.guideY = fl.y + 22; fl.guideL = 0; fl.nextF = 140; fl.lastF = undefined; fl.lastL = 0; fl.lastY = undefined; fl.trailAcc = 0; fl.poolNext = 430; fl.maxY = fl.y; fl.lastRingF = 0;
   flightGems.items = []; flightGems.start = 0;
   rider.wingScale = 1.3 + save.up.wings * 0.08; rider.root.visible = true;
   hudMode('flight'); el.distVal.textContent = '0'; clearHint();
@@ -520,7 +517,7 @@ function stepFlight(dt) {
   poseO.mode = 'fly'; poseO.lean = -steer * 0.6; poseO.dive = fl.dive; poseO.flapping = fl.flapAnim > 0 ? 1 : 0; poseO.speed01 = clamp((fl.v - 25) / 60, 0, 1); poseO.t = time; poseO.pitch = fl.th;
   rider.pose(dt, poseO);
   // shadow on sea
-  blob.quaternion.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)); blob.position.set(fl.x, 0.9, fl.z); blob.scale.setScalar(5 + fl.y * 0.05); blob.material.opacity = clamp(1 - fl.y / 260, 0.15, 0.85);
+  blob.rotation.set(-Math.PI / 2, 0, 0); blob.position.set(fl.x, 0.9, fl.z); blob.scale.setScalar(5 + fl.y * 0.05); blob.material.opacity = clamp(1 - fl.y / 260, 0.15, 0.85);
   // trail particles
   fl.trailAcc = (fl.trailAcc || 0) + dt * (14 + fl.dive * 40 + clamp((fl.v - 40) / 40, 0, 1) * 25);
   while (fl.trailAcc > 1) { fl.trailAcc -= 1; glow.emit(fl.x - V1.x * 0.6 + (Math.random() - 0.5) * 3, fl.y + 0.8 + (Math.random() - 0.5) * 2, fl.z - V1.z * 0.6 + (Math.random() - 0.5) * 3, -V1.x * 8, -V1.y * 8 + 1, -V1.z * 8, 1.3, 1.4, 1.6, 0.35 + Math.random() * 0.3, 0.7, 0); }
@@ -566,7 +563,7 @@ function popBalloon(b) {
 }
 function updateBalloons() {
   if (!balloonMesh) return; let n = 0;
-  for (const b of balloons) { if (!b.alive || n >= 48) continue; const by = b.y + Math.sin(time * 1.4 + b.ph) * 0.8; V1.set(b.x, by + 1.5, b.z); Q1.setFromAxisAngle(UPV, b.ph + time * 0.3); M4.compose(V1, Q1, V2.set(1, 1, 1)); balloonMesh.setMatrixAt(n, M4); balloonMesh.setColorAt(n, BCOL[b.c]); n++; }
+  for (const b of balloons) { if (!b.alive || n >= 48) continue; const by = b.y + Math.sin(time * 1.4 + b.ph) * 0.8; V1.set(b.x, by + 1.5, b.z); Q1.setFromAxisAngle(UPV, b.ph + time * 0.3); M4.compose(V1, Q1, V2.set(1.35, 1.35, 1.35)); balloonMesh.setMatrixAt(n, M4); balloonMesh.setColorAt(n, BCOL[b.c]); n++; }
   balloonMesh.count = n; balloonMesh.instanceMatrix.needsUpdate = true; if (balloonMesh.instanceColor) balloonMesh.instanceColor.needsUpdate = true;
 }
 function flightBot() {
@@ -610,10 +607,13 @@ function beachLand(isl) {
   banner('BEACH LANDING!', '#ffeaa0'); fl.y = Math.max(fl.y, 2);
 }
 function landFx(x, z, water) {
+  const gy = water ? 0 : fl.y;
   sfx(water ? 'splash' : 'step'); sfx('boom', { volume: 0.3 }); fl.shake = 1; fxK.flash = 0.2;
   ripple(x, z, 40); setTimeout(() => ripple(x, z, 70), 180);
-  burst(x, 1, z, 90, water ? 0xffffff : 0xffe9b0, 22, 1.0, 1.4, 16, false); burst(x, 2, z, 30, water ? 0x9fe8ff : 0xffe9b0, 16, 1.2, 1.6, 12, false);
-  rider.squash = 1; rider.root.position.set(x, 0.5, z); V1.set(0, 1, 0); rider.root.quaternion.setFromAxisAngle(UPV, Math.atan2(HV.x, HV.z));
+  burst(x, gy + 1, z, 110, water ? 0xffffff : 0xffe9b0, 26, 1.6, 1.6, 20, false); burst(x, gy + 2, z, 60, water ? 0x9fe8ff : 0xffe9b0, 20, 2.0, 1.8, 14, false);
+  for (let i = 0; i < 50; i++) { const a = Math.random() * 6.283, r = Math.random() * 3; spray.emit(x + Math.cos(a) * r, gy + 1, z + Math.sin(a) * r, Math.cos(a) * (2 + Math.random() * 5), 14 + Math.random() * 20, Math.sin(a) * (2 + Math.random() * 5), 0.9, 0.98, 1, 1.4 + Math.random() * 1.6, 1.8 + Math.random() * 0.8, 16); }
+  burst(x, gy + 3, z, 40, 0xffffff, 18, 1.2, 1.2, 8, true);
+  rider.squash = 1; rider.root.position.set(x, water ? 0.5 : gy, z); V1.set(0, 1, 0); rider.root.quaternion.setFromAxisAngle(UPV, Math.atan2(HV.x, HV.z));
   blob.material.opacity = 0; music.duck(0.25, 1.3);
 }
 function finishRun() {
@@ -624,7 +624,7 @@ function finishRun() {
 function stepLanding(dt) {
   landTimer += dt; fl.shake = Math.max(0, (fl.shake || 0) - dt * 2.5);
   poseO.mode = 'idle'; poseO.lean = 0; poseO.dive = 0; poseO.flapping = 0; poseO.speed01 = 0; poseO.t = time; rider.pose(dt, poseO);
-  if (!run.beach) { rider.root.position.y = 0.35 + Math.sin(time * 2.2) * 0.12; rider.root.rotation.z = Math.sin(time * 1.6) * 0.1; }
+  if (run.beach) { rider.root.position.y = fl.y; } else { rider.root.position.y = 0.35 + Math.sin(time * 2.2) * 0.12; rider.root.rotation.z = Math.sin(time * 1.6) * 0.1; }
   // cheer arms
   rider.armL.rotation.x = -2.7; rider.armR.rotation.x = -2.7; rider.armL.rotation.z = -0.35; rider.armR.rotation.z = 0.35;
   V1.copy(rider.root.position); tgt.set(V1.x - HV.x * 17, V1.y + 10, V1.z - HV.z * 17); tgtLook.copy(V1); tgtLook.y += 2; camUpV.set(0, 1, 0); setCam(dt, 2.5); setFov(baseFov + 4, dt);
@@ -754,7 +754,7 @@ function update(dt) {
   }
   // world & fx
   const ft = (state === 'slide' || state === 'countdown' || state === 'title' || state === 'select') ? path : null;
-  if (state === 'flight' || state === 'landing') { V1.set(fl.x, fl.y, fl.z); V2.copy(HV); }
+  if (state === 'flight' || state === 'landing' || state === 'results') { V1.set(fl.x, fl.y, fl.z); V2.copy(HV); }
   else { V1.copy(rider.root.position); path.at(Math.min(sl.s, path.L), F); V2.set(F.T.x, 0, F.T.z).normalize(); }
   const spd = state === 'flight' ? fl.v : state === 'slide' ? sl.v : 0;
   const scalePts = H * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
@@ -808,7 +808,7 @@ setMute(!!save.muted); refreshGems();
 if (!COURSES.find((c) => c.id === courseSel) || totalStars() < COURSES.find((c) => c.id === courseSel).unlock) courseSel = 'island';
 loadCourse(courseSel); path.at(0, F);
 requestAnimationFrame(frame);
-window.__sky = {
+window.__sky = { music, D0,
   get state() { return state; }, sl, fl, run, save, input, bot, course: () => course, path: () => path, items: () => items, THREE, camera, world, rings, pools, balloons, hoops, post,
   step(sec, dt = 1 / 30) { const n = Math.round(sec / dt); for (let i = 0; i < n; i++) update(dt); },
   setState(s) { state = s; }, startRun, toSelect, toTitle, showResults, setCourse(id) { courseSel = id; loadCourse(id); }, doFlap, renderNow() { render(0.016); }, frameNow() { update(1 / 30); render(1 / 30); }, setPaused

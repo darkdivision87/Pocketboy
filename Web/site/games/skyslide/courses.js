@@ -7,7 +7,7 @@ export const COURSES = [
     fogDensity: 0.0008, hemi: [0xcfeaff, 0x6fc0a8, 1.05], sunInt: 2.3,
     slide: { bands: [0xff4d6d, 0xff9a3c, 0xffe14a, 0x4fe07a, 0x3fc4ff, 0x6a6bff, 0xc062ff], rim: 0xffffff, under: 0xbfe6ff, glow: 1.0 },
     deco: 'palm', gem: [0x35e0ff, 0xff7ac8], cloudCol: 0xffffff, ambient: { kind: 'sparkle', color: 0xfff2a0, size: 0.35 },
-    music: { root: 'C', bpm: 124, seed: 11 }, flightRoot: 'F', stars: [2200, 5200, 10000], unlock: 0,
+    music: { root: 'C', bpm: 124, seed: 11 }, flightRoot: 'F', stars: [1200, 3000, 6500], unlock: 0,
     card: ['#3aa0ff', '#8fe6ff', '#1fc9c4']
   },
   {
@@ -17,7 +17,7 @@ export const COURSES = [
     fogDensity: 0.0008, hemi: [0xffd9f0, 0xc58ae0, 1.1], sunInt: 2.2,
     slide: { bands: [0xff6fae, 0xff9fd0, 0xffd36e, 0xb8f59a, 0x86e8ff, 0xa6a4ff, 0xe39cff], rim: 0xfff3fa, under: 0xffd0ea, glow: 1.0 },
     deco: 'candy', gem: [0xfff04a, 0xff5fb8], cloudCol: 0xffc6ea, ambient: { kind: 'sprinkle', color: 0xffffff, size: 0.28 },
-    music: { root: 'D', bpm: 128, seed: 31 }, flightRoot: 'A', stars: [2800, 6500, 12500], unlock: 1,
+    music: { root: 'D', bpm: 128, seed: 31 }, flightRoot: 'A', stars: [1800, 4200, 8500], unlock: 1,
     card: ['#c167ff', '#ffa8dc', '#ff7fb6']
   },
   {
@@ -27,7 +27,7 @@ export const COURSES = [
     fogDensity: 0.0006, hemi: [0xdff2ff, 0x8fb8d8, 1.1], sunInt: 2.0,
     slide: { bands: [0x5fd0ff, 0x8fe3ff, 0xffffff, 0xb7e8ff, 0x7fb6ff, 0xa7a4ff, 0xd9f5ff], rim: 0xffffff, under: 0xcfeeff, glow: 1.0 },
     deco: 'snow', gem: [0x8fefff, 0xffffff], cloudCol: 0xf6fcff, ambient: { kind: 'snow', color: 0xffffff, size: 0.3 },
-    music: { root: 'E', bpm: 118, seed: 47 }, flightRoot: 'D', stars: [3200, 7500, 14000], unlock: 3,
+    music: { root: 'E', bpm: 118, seed: 47 }, flightRoot: 'D', stars: [2200, 5000, 9500], unlock: 3,
     card: ['#4a8fe0', '#d6f2ff', '#58c8d8']
   },
   {
@@ -37,7 +37,7 @@ export const COURSES = [
     fogDensity: 0.0007, hemi: [0xb8a0ff, 0x4a2a9a, 1.0], sunInt: 1.9,
     slide: { bands: [0xff3fa4, 0xff7a3c, 0xffe640, 0x3dffb0, 0x3fd0ff, 0x7a6bff, 0xd040ff], rim: 0xe8e0ff, under: 0x6a4ad0, glow: 1.3 },
     deco: 'space', gem: [0xffe640, 0x3dffb0], cloudCol: 0xc8a8ff, ambient: { kind: 'mote', color: 0x9fe8ff, size: 0.4 },
-    music: { root: 'A', bpm: 132, seed: 67 }, flightRoot: 'E', stars: [3600, 8500, 16000], unlock: 6,
+    music: { root: 'A', bpm: 132, seed: 67 }, flightRoot: 'E', stars: [2600, 6000, 11000], unlock: 6,
     card: ['#150a45', '#7a38d6', '#2fd0ff']
   }
 ];

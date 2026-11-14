@@ -91,8 +91,6 @@ export function buildRider() {
       legL.rotation.x += (lX - legL.rotation.x) * k; legR.rotation.x += (lX - legR.rotation.x) * k;
       legL.rotation.z += ((slide ? 0.1 : 0.06) - legL.rotation.z) * k; legR.rotation.z += ((slide ? -0.1 : -0.06) - legR.rotation.z) * k;
       // body pitch & lean & squash
-      const pitchT = slide ? -0.06 : -(o.pitch || 0) * 0.9 - 0.9 * o.dive * 0.4 + 1.0 * (o.dive > 0.3 ? 0 : 0);
-      body.rotation.x += (slide ? -0.1 : pitchT - 0.0) * k * 0.0 + 0; // body pitch handled by root orientation
       body.rotation.z += (-(o.lean || 0) * 0.5 - body.rotation.z) * k;
       this.squash = damp(this.squash, 0, 8, dt);
       const sq = this.squash; body.scale.set(1 + sq * 0.25, 1 - sq * 0.3, 1 + sq * 0.25);

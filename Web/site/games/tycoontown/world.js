@@ -463,19 +463,19 @@ export class World {
       const P = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] }[n];
       P.forEach(([x, y]) => { c.fillStyle = n === 1 ? '#ff4b5c' : '#2b2f5a'; c.beginPath(); c.arc(64 + x * 32, 64 + y * 32, n === 1 ? 17 : 12, 0, TAU); c.fill(); c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.arc(64 + x * 32 - 3, 64 + y * 32 - 3, 4, 0, TAU); c.fill(); });
       const t = makeTexture(THREE, cv); return new THREE.MeshPhysicalMaterial({ map: t, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.12 }); });
-    const geo = new RoundedBoxGeometry(1.1, 1.1, 1.1, 4, 0.17);
+    const geo = new RoundedBoxGeometry(1.0, 1.0, 1.0, 4, 0.16);
     this.dice = [0, 1].map(() => { const m = new THREE.Mesh(geo, mats); m.castShadow = true; m.receiveShadow = true; m.visible = false; this.scene.add(m); return m; });
     this.faceN = { 3: [1, 0, 0], 4: [-1, 0, 0], 1: [0, 1, 0], 6: [0, -1, 0], 2: [0, 0, 1], 5: [0, 0, -1] };
-    this.tray = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.2, 0.14, 40), new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.4, clearcoat: 0.8 })); this.tray.receiveShadow = true; this.tray.visible = false; this.scene.add(this.tray);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.08, 8, 40), std(0xffd93b, 0.3, 0.4)); rim.rotation.x = Math.PI / 2; rim.position.y = 0.07; this.tray.add(rim);
+    this.tray = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.0, 0.14, 40), new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.4, clearcoat: 0.8 })); this.tray.receiveShadow = true; this.tray.visible = false; this.scene.add(this.tray);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.08, 8, 40), std(0xffd93b, 0.3, 0.4)); rim.rotation.x = Math.PI / 2; rim.position.y = 0.07; this.tray.add(rim);
   }
   rollDice(vals, focusTile, strength = 1) {
     const v = this.view; const fwd = new THREE.Vector3(-Math.sin(v.tYaw), 0, -Math.cos(v.tYaw)); const side = new THREE.Vector3(fwd.z, 0, -fwd.x);
-    const t = this.tiles[focusTile].pos; const land = new THREE.Vector3(t.x, 0, t.z).addScaledVector(fwd, 3.2); land.y = t.y + 0.07 + 0.55 + 0.07;
+    const t = this.tiles[focusTile].pos; const land = new THREE.Vector3(t.x, 0, t.z).addScaledVector(fwd, 1.9); land.y = t.y + 0.07 + 0.5 + 0.07;
     this.tray.position.set(land.x, t.y + 0.07, land.z); this.tray.visible = true; this.tray.scale.setScalar(0.01);
     T.add(0.3, (u) => this.tray.scale.setScalar(Math.max(0.01, u)), easeOutBack);
     const jobs = this.dice.map((d, k) => {
-      d.visible = true; const spread = (k === 0 ? -1 : 1) * 0.75;
+      d.visible = true; const spread = (k === 0 ? -1 : 1) * 0.7;
       const end = land.clone().addScaledVector(side, spread).addScaledVector(fwd, (k ? 0.3 : -0.3)); const start = land.clone().addScaledVector(fwd, -9 - k).addScaledVector(side, spread * 2.2 + (k ? 1 : -1)); start.y = land.y + 7 + k * 1.2;
       const n = this.faceN[vals[k]]; const qf = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(n[0], n[1], n[2]), new THREE.Vector3(0, 1, 0)); qf.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.random() * TAU));
       const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(); const A = (7 + Math.random() * 4) * Math.PI * strength; const H0 = start.y - land.y, hs = [H0, 1.9, 0.7, 0.22];
