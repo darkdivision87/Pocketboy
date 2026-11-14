@@ -33,6 +33,8 @@ public enum Library {
         .snowSlalom64,
         .skySlide64,
         .jetSki64,
+        .robotRaid64,
+        .turretZone64,
         .pocketPong
     ]
 
