@@ -43,6 +43,7 @@ Phones and tablets let kids touch the game itself. A game opts in with `override
 `pressed` (first frame of a touch), `released`. D-pad and A/B keep working at the same time (keyboards, controllers, the iPhone shell buttons),
 so treat the pointer as an extra way to play, never the only way. Good patterns: paddles and ships follow the finger; tap on a thing to shoot or
 pick it; hold the finger to steer toward it; drag to aim; tap a board square to choose it; hold (about 0.45 s) as the alternate action.
+`TouchGesture` (Touch.swift) detects taps, long-presses and swipes for you: keep `var touch = TouchGesture()`, call `touch.update(input.pointer)` once per `update`, then read `touch.tapped`, `touch.longPressed`, `touch.swipe` (1 up, 2 down, 4 left, 8 right), `touch.x/y`, `touch.down`, `touch.began`.
 Tap targets should be generous (at least 16 game pixels wide in pixel carts). Mouse clicks and trackpads arrive as the same pointer.
 
 ## Registering
