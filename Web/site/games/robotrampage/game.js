@@ -834,7 +834,7 @@ function updateGame(dt) {
   yaw += kx * 2.2 * dt; pitch = clamp(pitch + ky * 1.4 * dt, -0.6, 0.9);
   // hold-to-fire detection
   const now = performance.now(); let holding = fireBtnDown || keys.Space || keys.KeyF;
-  for (const p of pts.values()) { if (!p.moved && !p.fire && now - p.t > 230) p.fire = true; if (p.fire) holding = true; }
+  for (const p of pts.values()) { if (!p.moved && !p.fire && now - p.t > 230) { p.fire = true; tapBuf = 0.25; } if (p.fire) holding = true; }
   if ((holding || tapBuf > 0) && run.cool <= 0 && !(waveDelay > 1.6 && false)) { fire(); tapBuf = 0; }
   // waves
   if (waveDelay > 0) waveDelay -= dt;

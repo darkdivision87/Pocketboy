@@ -198,7 +198,7 @@ export function buildSlideProps(path, course, group) {
   // banner
   const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const c2 = cv.getContext('2d');
   const gr = c2.createLinearGradient(0, 0, 512, 0); gr.addColorStop(0, '#ff5fa2'); gr.addColorStop(0.5, '#ffb11f'); gr.addColorStop(1, '#2fc8ff');
-  c2.fillStyle = gr; c2.beginPath(); c2.roundRect(4, 4, 504, 120, 40); c2.fill();
+  c2.fillStyle = gr; c2.beginPath(); if (c2.roundRect) c2.roundRect(4, 4, 504, 120, 40); else c2.rect(4, 4, 504, 120); c2.fill();
   c2.font = '900 78px ui-rounded, "SF Pro Rounded", system-ui, sans-serif'; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.lineWidth = 12; c2.strokeStyle = '#1b3f9a'; c2.lineJoin = 'round';
   c2.strokeText('SKY SLIDE', 256, 68); c2.fillStyle = '#fff'; c2.fillText('SKY SLIDE', 256, 68);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;

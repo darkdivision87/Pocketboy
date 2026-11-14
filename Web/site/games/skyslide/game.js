@@ -212,7 +212,7 @@ function updateHud() {
   if (state === 'slide') { const p = clamp(sl.s / path.L, 0, 1); el.slideFill.style.width = `calc(${(p * 100).toFixed(1)}% - 8px)`; el.slideDot.style.left = `calc(${(p * 100).toFixed(1)}%)`; }
   if (state === 'flight' || state === 'landing') {
     const d = Math.floor(Math.max(0, fl.f)); if (d !== hudVals.dist) { el.distVal.textContent = fmt(d); hudVals.dist = d; }
-    const m = 1 + 0.5 * fl.rings; if (m !== hudVals.mult) { el.mult.textContent = 'x' + (m % 1 ? m.toFixed(1) : m); hudVals.mult = m; el.mult.classList.remove('pop'); void el.mult.offsetWidth; el.mult.classList.add('pop'); }
+    const m = Math.min(12, 1 + 0.5 * fl.rings); if (m !== hudVals.mult) { el.mult.textContent = 'x' + (m % 1 ? m.toFixed(1) : m); hudVals.mult = m; el.mult.classList.remove('pop'); void el.mult.offsetWidth; el.mult.classList.add('pop'); }
     const top = Math.max(140, fl.launchY * 1.6), a = clamp(fl.y / top, 0, 1); el.altFill.style.height = `calc(${(a * 100).toFixed(1)}% - 6px)`; el.altDot.style.bottom = `calc(${(a * 100).toFixed(1)}% - 15px)`;
     if (fl.flaps !== hudVals.flaps || fl.maxFlaps !== hudVals.maxFlaps) { hudVals.flaps = fl.flaps; hudVals.maxFlaps = fl.maxFlaps; let h = ''; for (let i = 0; i < fl.maxFlaps; i++) h += `<i class="${i < fl.flaps ? '' : 'off'}"></i>`; el.flaps.innerHTML = h; }
   }
@@ -546,7 +546,7 @@ function collectFlightGem(g) {
 }
 function collectRing(r) {
   r.done = 0.01; fl.rings++; fl.chain++; run.gems += 2; if (fl.rings % 3 === 0) fl.flaps = Math.min(fl.maxFlaps, fl.flaps + 1);
-  const m = 1 + 0.5 * fl.rings; banner(`RING!  x${m % 1 ? m.toFixed(1) : m}`, '#ffe36a');
+  const m = Math.min(12, 1 + 0.5 * fl.rings); banner(`RING!  x${m % 1 ? m.toFixed(1) : m}`, '#ffe36a');
   sfx('powerup', { volume: 0.4, pitch: 0.9 + Math.min(fl.chain, 8) * 0.07 });
   burst(r.x, r.y, r.z, 36, 0xffd23f, 16, 0.9, 0.8, 0, true); burst(r.x, r.y, r.z, 14, 0xffffff, 10, 0.7, 0.7, 0, true);
   fl.v = Math.min(112, fl.v + 2); fxK.flash = 0.12; fl.lift = Math.max(fl.lift, 0.35);
@@ -617,7 +617,7 @@ function landFx(x, z, water) {
   blob.material.opacity = 0; music.duck(0.25, 1.3);
 }
 function finishRun() {
-  const dist = Math.max(0, fl.f), mult = 1 + 0.5 * fl.rings, pm = run.pool ? [2, 1.5, 1.25][run.poolZone] : 1;
+  const dist = Math.max(0, fl.f), mult = Math.min(12, 1 + 0.5 * fl.rings), pm = run.pool ? [2, 1.5, 1.25][run.poolZone] : 1;
   run.dist = dist; run.mult = mult; run.score = Math.round(dist * mult * pm);
   const th = course.stars; run.stars = run.score >= th[2] ? 3 : run.score >= th[1] ? 2 : run.score >= th[0] ? 1 : 0;
 }
@@ -747,7 +747,7 @@ function update(dt) {
     else if (state === 'countdown') stepCountdown(dt);
     else if (state === 'slide') {
       stepSlide(sdt);
-      if (hintTimer > 0) { hintTimer -= dt; if (hintTimer <= 0 || sl.t > 6) { clearHint(); save.hints.slide++; persist(); hintTimer = 0; } }
+      if (state === 'slide' && hintTimer > 0) { hintTimer -= dt; if (hintTimer <= 0 || sl.t > 6) { clearHint(); save.hints.slide++; persist(); hintTimer = 0; } }
     }
     else if (state === 'flight') stepFlight(sdt);
     else if (state === 'landing' || state === 'results') stepLanding(dt);
@@ -808,7 +808,7 @@ setMute(!!save.muted); refreshGems();
 if (!COURSES.find((c) => c.id === courseSel) || totalStars() < COURSES.find((c) => c.id === courseSel).unlock) courseSel = 'island';
 loadCourse(courseSel); path.at(0, F);
 requestAnimationFrame(frame);
-window.__sky = { music, D0,
+window.__sky = { music, D0, rider,
   get state() { return state; }, sl, fl, run, save, input, bot, course: () => course, path: () => path, items: () => items, THREE, camera, world, rings, pools, balloons, hoops, post,
   step(sec, dt = 1 / 30) { const n = Math.round(sec / dt); for (let i = 0; i < n; i++) update(dt); },
   setState(s) { state = s; }, startRun, toSelect, toTitle, showResults, setCourse(id) { courseSel = id; loadCourse(id); }, doFlap, renderNow() { render(0.016); }, frameNow() { update(1 / 30); render(1 / 30); }, setPaused
