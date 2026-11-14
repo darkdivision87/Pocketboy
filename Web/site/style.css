@@ -4,6 +4,7 @@
   --sat: env(safe-area-inset-top); --sab: env(safe-area-inset-bottom); --sal: env(safe-area-inset-left); --sar: env(safe-area-inset-right);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: -apple-system, system-ui, sans-serif; overscroll-behavior: none; }
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 [hidden] { display: none !important; }
@@ -104,3 +105,8 @@ h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1px; }
   .grille { display: none; }
 }
 #error { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 99; background: #5a1a1a; color: #fff; padding: 12px; border-radius: 10px; font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; }
+
+/* No zooming, selecting or rubber-banding while playing (iPhone Safari ignores user-scalable=no). */
+body.playing { position: fixed; inset: 0; width: 100%; overflow: hidden; }
+#console, #console * , #menu, #menu * { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#console button, #menu button, .pill, .round, .dpad { touch-action: none; }

@@ -198,6 +198,7 @@ function play(c) {
   $('#detail').hidden = true;
   $('#shelf').hidden = true;
   $('#console').hidden = false;
+  document.body.classList.add('playing');
   setHeld('dpad', 0); setHeld('buttons', 0);
   latch = 0;
   engine.ex.pb_set_mode(settings.color ? 1 : 0, settings.tint);
@@ -213,6 +214,7 @@ function eject() {
   current = null;
   toggleMenu(false);
   $('#console').hidden = true;
+  document.body.classList.remove('playing');
   $('#shelf').hidden = false;
   renderShelf();
   applyMute();
@@ -304,8 +306,23 @@ function bindUi() {
   $('#swatches').addEventListener('click', (e) => { const k = e.target.dataset && e.target.dataset.k; if (k) { settings.shell = k; applySettings(); } });
   document.addEventListener('visibilitychange', () => { if (document.hidden && current) toggleMenu(true); });
   // iOS Safari: stop pinch/double-tap zoom and rubber-banding while playing.
-  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((n) => document.addEventListener(n, (e) => e.preventDefault()));
+  // Double-tap zoom: swallow the second tap of a quick pair while a game is on screen.
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (current && now - lastTouchEnd < 400 && !e.target.closest('#menu, #settings')) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+  document.addEventListener('dblclick', (e) => { if (current) e.preventDefault(); }, { passive: false });
+  document.addEventListener('contextmenu', (e) => { if (current) e.preventDefault(); });
+  document.addEventListener('selectstart', (e) => { if (current) e.preventDefault(); });
   document.addEventListener('touchmove', (e) => { if (current && !menuOpen) e.preventDefault(); }, { passive: false });
 }
 
 boot();
+
+// Offline support: after the first visit the whole game works without a connection.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}

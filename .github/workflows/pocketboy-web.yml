@@ -53,6 +53,7 @@ jobs:
           mkdir -p dist
           cp Web/site/* dist/
           cp "$(find Web/.build -name PocketWeb.wasm | head -n 1)" dist/pocketweb.wasm
+          sed -i "s/const VERSION = 'dev'/const VERSION = '${GITHUB_SHA}'/" dist/sw.js
           touch dist/.nojekyll
           ls -la dist
 
