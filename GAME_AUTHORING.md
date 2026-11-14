@@ -36,6 +36,15 @@ Set `era: .n64` in the `Cartridge`. Override `drawTrueColor(_ b: TrueColorBuffer
 Colours are `TrueColorBuffer.rgb(r, g, b)` (0...255). Use `b.withPixels { ptr, w, h in ... }` for per-pixel renderers
 (floor/ray casters), and keep per-frame cost low (about 92k pixels). Classic mode converts the frame to four dithered shades automatically.
 
+## Direct touch (pointer) input
+
+Phones and tablets let kids touch the game itself. A game opts in with `override var wantsPointer: Bool { return true }`, then reads
+`input.pointer` every `update`: `x`/`y` in the game's own pixels (pixel carts 160x144, 64 carts 320x288), `down` (finger is on the screen),
+`pressed` (first frame of a touch), `released`. D-pad and A/B keep working at the same time (keyboards, controllers, the iPhone shell buttons),
+so treat the pointer as an extra way to play, never the only way. Good patterns: paddles and ships follow the finger; tap on a thing to shoot or
+pick it; hold the finger to steer toward it; drag to aim; tap a board square to choose it; hold (about 0.45 s) as the alternate action.
+Tap targets should be generous (at least 16 game pixels wide in pixel carts). Mouse clicks and trackpads arrive as the same pointer.
+
 ## Registering
 
 At the bottom of the file:
