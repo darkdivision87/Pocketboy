@@ -1,0 +1,15 @@
+{
+  "name": "Sky Slide",
+  "short_name": "Sky Slide",
+  "description": "Slide down a giant rainbow waterslide, launch into the sky and glide!",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1c6fe0",
+  "theme_color": "#1c6fe0",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

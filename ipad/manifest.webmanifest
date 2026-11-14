@@ -1,0 +1,15 @@
+{
+  "name": "PocketBoy iPad Edition",
+  "short_name": "PocketBoy iPad",
+  "description": "PocketBoy games with touch controls made for iPad.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d0f16",
+  "theme_color": "#0d0f16",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
