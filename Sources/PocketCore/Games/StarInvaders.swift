@@ -174,6 +174,9 @@ final class StarInvaders: Game {
     private var phaseTimer = 0
     private var paused = false
     private var invaded = false
+    private var touch = TouchGesture()
+
+    override var wantsPointer: Bool { return true }
 
     override var score: Int { return points }
 
@@ -271,11 +274,12 @@ final class StarInvaders: Game {
 
     override func update(_ input: InputState) {
         tick += 1
+        touch.update(input.pointer)
         updateBooms()
         if popupTimer > 0 { popupTimer -= 1 }
         switch phase {
         case .title:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 newGame()
             }
@@ -284,7 +288,7 @@ final class StarInvaders: Game {
             movePlayer(input, false)
             if phaseTimer <= 0 { phase = .play }
         case .play:
-            if input.startPressed {
+            if input.startPressed || (paused && touch.tapped) {
                 paused = !paused
                 play(.pause)
             }
@@ -301,7 +305,7 @@ final class StarInvaders: Game {
                 }
             }
         case .over:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 newGame()
             }
@@ -310,8 +314,14 @@ final class StarInvaders: Game {
 
     private func movePlayer(_ input: InputState, _ canFire: Bool) {
         playerX += Float(input.dx) * 1.4
+        if touch.down {
+            let goal: Float = Float(touch.x) - 4
+            playerX += (goal - playerX) * 0.3
+        }
         playerX = clamp(playerX, 3, 148)
-        if canFire && (input.a || input.b) && !bulletOn {
+        var touchFire = false
+        if touch.down && (touch.began || touch.frames % 6 == 0) { touchFire = true }
+        if canFire && (input.a || input.b || touchFire) && !bulletOn {
             bulletOn = true
             bulletX = Int(playerX) + 4
             bulletY = playerY - 3

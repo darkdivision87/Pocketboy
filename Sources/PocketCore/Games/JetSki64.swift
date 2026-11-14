@@ -683,7 +683,7 @@ final class JetSki64: Game {
         if tapBoostT > 0 { tapBoostT -= 1 }
         if tapSpinT > 0 { tapSpinT -= 1 }
         if p.pressed {
-            if phase == .race && p.x < 112 && p.y > 250 {
+            if phase == .race && ptX < 112 && ptY > 250 {
                 tapBoostT = 50
                 ptIgnore = true
                 ptDown = false
@@ -693,13 +693,13 @@ final class JetSki64: Game {
             if phase == .ready {
                 input.pressed.insert(.a)
             } else if phase == .title {
-                if p.y >= 120 && p.y < 160 {
-                    if p.x < 160 { input.pressed.insert(.left) } else { input.pressed.insert(.right) }
+                if ptY >= 120 && ptY < 160 {
+                    if ptX < 160 { input.pressed.insert(.left) } else { input.pressed.insert(.right) }
                 } else {
                     input.pressed.insert(.a)
                 }
             } else if phase == .results {
-                if p.y < 30 { input.pressed.insert(.start) } else { input.pressed.insert(.a) }
+                if ptY < 30 { input.pressed.insert(.start) } else { input.pressed.insert(.a) }
             }
         }
     }

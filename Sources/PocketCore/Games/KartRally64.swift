@@ -903,12 +903,12 @@ final class KartRally64: Game {
         let sp: Float = abs(k.speed)
         let grip: Float = min(1, sp / 0.9)
         let ratio: Float = min(1, sp / maxS)
-        var turn: Float = Float(input.dx) * 0.036 * grip * (1.15 - 0.3 * ratio)
+        var turn: Float = steerAxis(input) * 0.036 * grip * (1.15 - 0.3 * ratio)
         if k.speed < 0 { turn = -turn }
         k.heading = KartRally64.wrapAngle(k.heading + turn)
         moveKart(&k)
         karts[0] = k
-        lean += (Float(input.dx) - lean) * 0.2
+        lean += (steerAxis(input) - lean) * 0.2
 
         // wrong way detection
         let j = max(0, min(tr.count - 1, k.idx))
@@ -1004,7 +1004,41 @@ final class KartRally64: Game {
         }
     }
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchSteer: Float = 0
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchSteer = 0
+        if touch.began { e.pressed.insert(.a) }
+        if touch.down {
+            if touch.y >= 230 {
+                e.held.insert(.b)
+                e.held.remove(.a)
+            } else {
+                e.held.insert(.a)
+            }
+            let ox: Float = Float(touch.x - 160)
+            if ox > 12 {
+                touchSteer = min(1, (ox - 12) / 100)
+            } else if ox < -12 {
+                touchSteer = max(-1, (ox + 12) / 100)
+            }
+        }
+        return e
+    }
+
+    private func steerAxis(_ input: InputState) -> Float {
+        if touchSteer != 0 { return touchSteer }
+        return Float(input.dx)
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frame += 1
         if msgTimer > 0 { msgTimer -= 1 }
         if karts.count < 4 { setupRace() }
@@ -1025,7 +1059,7 @@ final class KartRally64: Game {
             if input.a { aHeld += 1 } else { aHeld = 0 }
             cdTimer -= 1
             if cdTimer == 180 || cdTimer == 120 || cdTimer == 60 { play(.countdown) }
-            lean += (Float(input.dx) - lean) * 0.2
+            lean += (steerAxis(input) - lean) * 0.2
             updateCamera()
             if cdTimer <= 0 { goRace() }
         case .racing:

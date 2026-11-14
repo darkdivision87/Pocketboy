@@ -96,6 +96,9 @@ final class RockBlaster: Game {
     private var respawnTimer = 0
     private var fireCooldown = 0
     private var hyperCooldown = 0
+    private var touch = TouchGesture()
+
+    override var wantsPointer: Bool { return true }
 
     private var rocks: [Rock] = []
     private var shots: [Shot] = []
@@ -244,18 +247,19 @@ final class RockBlaster: Game {
 
     override func update(_ input: InputState) {
         tick += 1
+        touch.update(input.pointer)
         switch phase {
         case .title:
             moveRocks()
             if rocks.isEmpty {
                 for _ in 0..<5 { rocks.append(makeRock(rng.range(1, 2), avoidShip: false)) }
             }
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 newGame()
             }
         case .play:
-            if input.startPressed {
+            if input.startPressed || (paused && touch.tapped) {
                 paused = !paused
                 play(.pause)
             }
@@ -264,7 +268,7 @@ final class RockBlaster: Game {
             moveRocks()
             updateDebris()
             if overTimer > 0 { overTimer -= 1 }
-            if overTimer <= 0 && (input.aPressed || input.startPressed) {
+            if overTimer <= 0 && (input.aPressed || input.startPressed || touch.tapped) {
                 play(.confirm)
                 newGame()
             }
@@ -322,6 +326,20 @@ final class RockBlaster: Game {
     private func updateShip(_ input: InputState) {
         shipA += Float(input.dx) * 0.075
         thrusting = input.a
+        if touch.down {
+            let tdx: Float = Float(touch.x) - shipX
+            let tdy: Float = Float(touch.y) - shipY
+            let tdist: Float = sqrt(tdx * tdx + tdy * tdy)
+            if tdist > 4 {
+                let want: Float = atan2(tdx, -tdy)
+                var diff: Float = want - shipA
+                while diff > Float.pi { diff -= 2 * Float.pi }
+                while diff < -Float.pi { diff += 2 * Float.pi }
+                diff = clamp(diff, -0.11, 0.11)
+                shipA += diff
+            }
+            if tdist > 30 { thrusting = true }
+        }
         if thrusting {
             shipVX += sin(shipA) * 0.07
             shipVY -= cos(shipA) * 0.07
@@ -340,7 +358,7 @@ final class RockBlaster: Game {
         if fireCooldown > 0 { fireCooldown -= 1 }
         if hyperCooldown > 0 { hyperCooldown -= 1 }
 
-        if input.b && fireCooldown <= 0 && shots.count < 4 {
+        if (input.b || touch.tapped) && fireCooldown <= 0 && shots.count < 4 {
             fireCooldown = 9
             let hx = sin(shipA)
             let hy = -cos(shipA)
@@ -349,7 +367,7 @@ final class RockBlaster: Game {
             play(.shoot)
         }
 
-        if (input.selectPressed || input.upPressed) && hyperCooldown <= 0 {
+        if (input.selectPressed || input.upPressed || touch.longPressed) && hyperCooldown <= 0 {
             hyperCooldown = 40
             shipX = Float(rng.range(10, 149))
             shipY = Float(rng.range(14, 133))

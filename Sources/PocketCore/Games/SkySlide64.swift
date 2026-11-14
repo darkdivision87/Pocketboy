@@ -648,7 +648,6 @@ final class SkySlide64: Game {
         }
         if !p.down { ptDown = false }
         if tapBoostT > 0 { tapBoostT -= 1 }
-        if tapSpinT > 0 { tapSpinT -= 1 }
         if p.pressed {
             if phase == .title || phase == .summary || phase == .results {
                 if phase == .summary && round > 5 && ptY < 24 {

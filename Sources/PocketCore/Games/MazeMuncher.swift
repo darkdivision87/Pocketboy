@@ -145,6 +145,9 @@ final class MazeMuncher: Game {
     private var rng = Rng()
 
     override var score: Int { return points }
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchSwiped = false
 
     override func start() {
         playMusic(Tunes.tense)
@@ -255,7 +258,30 @@ final class MazeMuncher: Game {
 
     // MARK: Update
 
-    override func update(_ input: InputState) {
+    override func update(_ rawInput: InputState) {
+        touch.update(rawInput.pointer)
+        var input = rawInput
+        if touch.tapped {
+            input.pressed.insert(.a)
+            if mode == .paused { input.pressed.insert(.start) }
+        }
+        if !touch.down { touchSwiped = false }
+        if touch.swipe != 0 { touchSwiped = true }
+        if touch.swipe == 1 { input.pressed.insert(.up) }
+        else if touch.swipe == 2 { input.pressed.insert(.down) }
+        else if touch.swipe == 4 { input.pressed.insert(.left) }
+        else if touch.swipe == 8 { input.pressed.insert(.right) }
+        else if touch.down && !touchSwiped && mode == .playing {
+            let fdx: Int = touch.x - (pac.x + 4)
+            let fdy: Int = touch.y - (pac.y + 4)
+            if abs(fdx) > 6 || abs(fdy) > 6 {
+                if abs(fdx) >= abs(fdy) {
+                    if fdx > 0 { input.held.insert(.right) } else { input.held.insert(.left) }
+                } else {
+                    if fdy > 0 { input.held.insert(.down) } else { input.held.insert(.up) }
+                }
+            }
+        }
         tick = (tick + 1) % 1_000_000
         switch mode {
         case .title:
