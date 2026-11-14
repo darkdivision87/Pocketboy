@@ -21,13 +21,13 @@ export function createObby(G) {
   const dark = (c) => c.clone().multiplyScalar(0.6);
   function stat(lr, ly, lf, sr, sy, sf, color, extra) {
     const [x, zz] = W(lr, lf), [sx, sz] = SZ(sr, sf), cy = o.y + ly - sy / 2;
-    batch.box(x, cy, zz, sx, sy, sz, color); batch.box(x, o.y + ly - 0.06, zz, sx + 0.04, 0.12, sz + 0.04, new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28));
+    batch.box(x, cy, zz, sx, sy, sz, color); batch.box(x, o.y + ly - 0.045, zz, sx + 0.04, 0.12, sz + 0.04, new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28));
     const c = boxC(x, cy, zz, sx, sy, sz, extra); z.cols.push(c); return c;
   }
   function mov(lr, ly, lf, sr, sy, sf, color, fn, extra) {
     const [x, zz] = W(lr, lf), [sx, sz] = SZ(sr, sf), cy = o.y + ly - sy / 2;
     const m = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({ color, roughness: 0.5 })); m.scale.set(sx, sy, sz); m.position.set(x, cy, zz); m.castShadow = m.receiveShadow = true; scene.add(m);
-    const top = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({ color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28), roughness: 0.5 })); top.scale.set(1.01, 0.1 / sy, 1.01); top.position.y = 0.5 - 0.05 / sy; m.add(top);
+    const top = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({ color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.28), roughness: 0.5 })); top.scale.set(1.01, 0.1 / sy, 1.01); top.position.y = 0.5 - 0.045 / sy; m.add(top);
     const c = boxC(x, cy, zz, sx, sy, sz, extra); c.cam = false; z.cols.push(c);
     const f = fw(), r = rt(); const mv = { c, m, bx: x, by: cy, bz: zz, sx, sy, sz, fn, f, r, px: x, py: cy, pz: zz }; z.movers.push(mv); return mv;
   }
@@ -66,7 +66,7 @@ export function createObby(G) {
       // flag
       const [fx, fz] = W(2.4, 0.8); batch.box(fx, o.y + 1.4, fz, 0.14, 2.8, 0.14, 0xffffff);
       const flag = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({ color: 0xff5a5f, emissive: 0x000000 })); flag.scale.set(0.9, 0.6, 0.08); flag.position.set(fx, o.y + 2.5, fz); scene.add(flag);
-      const sp = textSprite(i === N - 1 ? 'FINISH' : i === 0 ? 'START' : String(i + 1), { px: 70, size: 0.8, bg: null }); const [sx, sz] = W(0, 3); sp.position.set(fx, o.y + 3.7, fz); sp.material.depthWrite = false; scene.add(sp);
+      const sp = textSprite(i === N - 1 ? 'FINISH' : i === 0 ? 'START' : String(i + 1), { px: 70, size: i === 0 || i === N - 1 ? 0.55 : 0.75, bg: null }); const [sx, sz] = W(0, 3); sp.position.set(fx, o.y + 3.7, fz); sp.material.depthWrite = false; scene.add(sp);
       z.stages.push({ i, x: sx, y: o.y, z: sz, h: o.h, pad, flag });
       if (i === N - 1) { // trophy
         const tm = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.2, metalness: 0.7, emissive: 0xff9d00, emissiveIntensity: 0.35 }); const tg = new THREE.Group();

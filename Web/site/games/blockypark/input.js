@@ -16,7 +16,6 @@ export class Input {
     addEventListener('blur', () => { this.keys = {}; this.jump = false; });
     for (const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, (e) => e.preventDefault());
     document.addEventListener('touchmove', (e) => { if (e.target.closest && e.target.closest('.scroll')) return; e.preventDefault(); }, { passive: false });
-    let lt = 0; document.addEventListener('touchend', (e) => { const n = Date.now(); if (n - lt < 350 && !(e.target.closest && e.target.closest('.scroll'))) e.preventDefault(); lt = n; }, { passive: false });
   }
   setJumpButton(el) {
     const on = (e) => { e.preventDefault(); e.stopPropagation(); this.btnJump = true; this.jump = true; this.jumpEdge = true; el.classList.add('down'); };

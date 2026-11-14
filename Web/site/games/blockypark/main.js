@@ -89,7 +89,7 @@ const G = {
     G.fx.emit(b.x + (Math.random() - 0.5) * 0.4, b.y + 0.3 + Math.random() * 0.6, b.z + (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.8, id === 'bubbles' ? 1.2 : 0.6, (Math.random() - 0.5) * 0.8, 0.8, c, big, id === 'bubbles' ? -0.5 : 1.5);
   },
   modal(html, handlers = {}, opts = {}) {
-    const m = $('modal'), card = m.firstElementChild; card.innerHTML = html; m.classList.remove('hidden'); input.enabled = false; input.reset();
+    const m = $('modal'), card = m.firstElementChild; card.className = 'card scroll'; card.style.width = ''; card.innerHTML = html; m.classList.remove('hidden'); input.enabled = false; input.reset();
     card.querySelectorAll('[data-a]').forEach((el) => el.addEventListener('click', () => { music.sfx('click'); const a = el.dataset.a; if (!opts.keep) G.closeModal(); handlers[a] && handlers[a](el); }));
   },
   closeModal() { $('modal').classList.add('hidden'); input.enabled = G.state === 'play'; },
@@ -179,6 +179,7 @@ $('bAch').onclick = () => { music.sfx('click'); showAchievements(); };
 $('bMenu').onclick = () => { music.sfx('click'); showPause(); };
 function showAchievements() {
   G.modal(`<h2>Awards</h2><p>${Object.keys(S.ach).length} of ${ACH.length} collected</p><div class="achl">${ACH.map((a) => `<div class="ach ${S.ach[a.id] ? 'got' : ''}">${svg('trophy')}<div>${a.name}<small>${a.desc}</small></div></div>`).join('')}</div><div class="row"><button class="btn blue" data-a="x">Close</button></div>`);
+  $('modal').firstElementChild.style.width = 'min(92vw,720px)';
 }
 function showPause() {
   const z = G.zone, inHub = z && z.id === 'hub';
@@ -302,7 +303,7 @@ $('playBtn').onclick = async () => {
   G.zone.startPlay && G.zone.startPlay(G);
   G.playMusic('sunny', 0.6);
   setTimeout(() => { if (G.dailyAvailable()) G.claimDaily(); }, 900);
-  if (!S.hint) { S.hint = 1; Save.save(); const tch = document.body.classList.contains('touch'); const hx = G.P.body.x, hz = G.P.body.z; setTimeout(() => { G.hint(tch ? 'Drag on the left to run, tap JUMP to hop!<small>Drag on the right to look around</small>' : 'WASD to run, SPACE to jump<small>Drag the mouse to look around</small>', 14000); const iv = setInterval(() => { if (Math.hypot(G.P.body.x - hx, G.P.body.z - hz) > 7) { clearInterval(iv); G.hint('Walk into a glowing gate to play a game!<small>Collect coins and pick up your daily gift</small>', 9000); } }, 400); }, 2200); }
+  if (!S.hint) { S.hint = 1; Save.save(); const tch = document.body.classList.contains('touch'); const hx = G.P.body.x, hz = G.P.body.z; setTimeout(() => { G.hint(tch ? 'Drag on the left to run, tap JUMP to hop!<small>Drag on the right to look around</small>' : 'WASD to run, SPACE to jump<small>Drag the mouse to look around</small>', 14000); const iv = setInterval(() => { if (!G.zone || G.zone.id !== 'hub') { clearInterval(iv); return; } if (Math.hypot(G.P.body.x - hx, G.P.body.z - hz) > 7) { clearInterval(iv); G.hint('Walk into a glowing gate to play a game!<small>Collect coins and pick up your daily gift</small>', 9000); } }, 400); }, 2200); }
 };
 
 // ---------- main loop ----------
@@ -330,7 +331,7 @@ function titleCamera(dt) {
 G.titleCam = titleCamera;
 
 (async function boot() {
-  G.state = 'title';
+  G.state = 'title'; try { if (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 1) { document.body.classList.add('touch'); input.touchSeen = true; } } catch (e) {}
   try { await enterZone('hub', { title: true }); } catch (e) { console.error(e); errs.push('boot ' + e + (e.stack || '')); }
   G.state = 'title'; resize(); $('floaters');
   requestAnimationFrame(frame);
