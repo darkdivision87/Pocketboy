@@ -37,6 +37,7 @@ public enum Library {
         .turretZone64,
         .turboFox64,
         .railRunner64,
+        .fluffwood64,
         .pocketPong
     ]
 
