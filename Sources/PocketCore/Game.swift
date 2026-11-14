@@ -23,6 +23,12 @@ public class Game {
     public func draw(_ canvas: Canvas) {}
     public func drawTrueColor(_ buffer: TrueColorBuffer) {}
 
+    /// Persistent progress. Return a small byte array (under 4000 bytes) describing what should be kept between play sessions.
+    /// The console calls this about every two seconds and stores the result whenever it changes.
+    public func exportSave() -> [UInt8] { return [] }
+    /// Called once right after the cartridge is inserted, before `start()`, with bytes previously returned by `exportSave`.
+    public func importSave(_ bytes: [UInt8]) {}
+
     public func play(_ sfx: Sfx) { audio.play(sfx) }
     public func playMusic(_ tune: Tune?) { audio.setTune(tune) }
 }

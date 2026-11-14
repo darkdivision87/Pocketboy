@@ -26,6 +26,9 @@ public final class Console {
     public private(set) var isBooting = false
     public var highScores: [String: Int] = [:]
     public var onHighScoresChanged: (([String: Int]) -> Void)?
+    /// Saved progress per cartridge id (see Game.exportSave). Fill before `insert`; observe changes with `onSave`.
+    public var saves: [String: [UInt8]] = [:]
+    public var onSave: ((String, [UInt8]) -> Void)?
 
     private var game: Game?
     private var boot: Game?
@@ -46,6 +49,7 @@ public final class Console {
         cartridge = cart
         let g = cart.make()
         g.audio = audio
+        if let saved = saves[cart.id] { g.importSave(saved) }
         game = g
         let b = BootGame()
         b.audio = audio
@@ -62,6 +66,7 @@ public final class Console {
     }
 
     public func eject() {
+        flushSave()
         audio.setTune(nil)
         if scoresDirty {
             scoresDirty = false
@@ -101,6 +106,7 @@ public final class Console {
         } else if let g = game {
             g.update(input)
             score = g.score
+            if frameCount % 120 == 0 { flushSave() }
             if let id = cartridge?.id, score > (highScores[id] ?? 0) {
                 highScores[id] = score
                 scoresDirty = true
@@ -112,6 +118,17 @@ public final class Console {
     /// Re-renders the current frame (after a display mode change or while paused).
     public func redraw() {
         render()
+    }
+
+    /// Stores the running game's progress if it changed.
+    public func flushSave() {
+        guard let g = game, let id = cartridge?.id else { return }
+        let bytes = g.exportSave()
+        if bytes.isEmpty || bytes.count > 4000 { return }
+        if saves[id] != bytes {
+            saves[id] = bytes
+            onSave?(id, bytes)
+        }
     }
 
     public func flushHighScores() {

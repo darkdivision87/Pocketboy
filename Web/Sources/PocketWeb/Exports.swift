@@ -8,12 +8,20 @@ private let pbScratch = UnsafeMutablePointer<UInt8>.allocate(capacity: 4096)
 private let pbAudio = UnsafeMutablePointer<Float>.allocate(capacity: 8192)
 private var pbLastCopied = -1
 private var pbWired = false
+private let pbSaveBuf = UnsafeMutablePointer<UInt8>.allocate(capacity: 4096)
+private var pbSaveQueue: [(Int, [UInt8])] = []
 
 private func wire() {
     if pbWired { return }
     pbWired = true
     pbConsole.audio.onSfx = { sfx in pbSynth.trigger(sfx) }
     pbConsole.audio.onTune = { tune in pbSynth.setTune(tune) }
+    pbConsole.onSave = { id, bytes in
+        for (i, cart) in Library.all.enumerated() where cart.id == id {
+            pbSaveQueue.removeAll { $0.0 == i }
+            pbSaveQueue.append((i, bytes))
+        }
+    }
 }
 
 private func syncFrame() {
@@ -137,3 +145,42 @@ public func pb_audio(_ frames: Int32) {
     let n = min(max(Int(frames), 0), 8192)
     pbSynth.render(pbAudio, frames: n)
 }
+
+// MARK: Saved progress. JS writes bytes into pb_save_buf then calls pb_save_set before inserting a cart; it polls pb_save_poll.
+
+@_expose(wasm, "pb_save_buf") @_cdecl("pb_save_buf")
+public func pb_save_buf() -> UnsafeMutablePointer<UInt8> { return pbSaveBuf }
+
+@_expose(wasm, "pb_save_set") @_cdecl("pb_save_set")
+public func pb_save_set(_ index: Int32, _ length: Int32) {
+    let i = Int(index)
+    let n = min(max(Int(length), 0), 4000)
+    if i < 0 || i >= Library.all.count || n == 0 { return }
+    var bytes: [UInt8] = []
+    bytes.reserveCapacity(n)
+    for k in 0..<n { bytes.append(pbSaveBuf[k]) }
+    pbConsole.saves[Library.all[i].id] = bytes
+}
+
+/// Returns the byte length of the oldest unsaved progress (0 if none) and copies it into pb_save_buf.
+@_expose(wasm, "pb_save_poll") @_cdecl("pb_save_poll")
+public func pb_save_poll() -> Int32 {
+    guard let first = pbSaveQueue.first else { return 0 }
+    let n = min(first.1.count, 4000)
+    for k in 0..<n { pbSaveBuf[k] = first.1[k] }
+    return Int32(n)
+}
+
+@_expose(wasm, "pb_save_poll_index") @_cdecl("pb_save_poll_index")
+public func pb_save_poll_index() -> Int32 {
+    guard let first = pbSaveQueue.first else { return -1 }
+    return Int32(first.0)
+}
+
+@_expose(wasm, "pb_save_pop") @_cdecl("pb_save_pop")
+public func pb_save_pop() {
+    if !pbSaveQueue.isEmpty { pbSaveQueue.removeFirst() }
+}
+
+@_expose(wasm, "pb_flush_save") @_cdecl("pb_flush_save")
+public func pb_flush_save() { pbConsole.flushSave() }

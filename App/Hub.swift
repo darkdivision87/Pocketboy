@@ -73,6 +73,17 @@ final class Hub: ObservableObject {
                 self.defaults.set(data, forKey: "highScores")
             }
         }
+        if let savedData = d.data(forKey: "saves"),
+           let decoded = try? JSONDecoder().decode([String: [UInt8]].self, from: savedData) {
+            console.saves = decoded
+        }
+        console.onSave = { [weak self] id, bytes in
+            guard let self = self else { return }
+            self.console.saves[id] = bytes
+            if let data = try? JSONEncoder().encode(self.console.saves) {
+                self.defaults.set(data, forKey: "saves")
+            }
+        }
         applyMode()
         audioOut = AudioOutput(synth: synth)
         audioOut?.start()

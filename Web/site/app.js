@@ -24,6 +24,7 @@ let filter = 'ALL';
 let current = null;
 let menuOpen = false;
 let highDirty = 0;
+let saveTick = 0;
 
 // ---------- input ----------
 const held = { dpad: 0, buttons: 0, keys: 0, pad: 0 };
@@ -191,6 +192,30 @@ function toggleMenu(open) {
   applyMute();
 }
 
+function loadSave(c) {
+  try {
+    const hex = localStorage.getItem('pb.save.' + c.id);
+    if (!hex) return;
+    const n = Math.floor(hex.length / 2);
+    const buf = new Uint8Array(engine.memory.buffer, engine.ex.pb_save_buf(), 4096);
+    for (let i = 0; i < n && i < 4000; i++) buf[i] = parseInt(hex.substr(i * 2, 2), 16);
+    engine.ex.pb_save_set(c.index, Math.min(n, 4000));
+  } catch (e) { /* storage unavailable */ }
+}
+function pollSaves() {
+  let guard = 0;
+  while (guard++ < 8) {
+    const len = engine.ex.pb_save_poll();
+    if (!len) return;
+    const idx = engine.ex.pb_save_poll_index();
+    const bytes = new Uint8Array(engine.memory.buffer, engine.ex.pb_save_buf(), len);
+    let hex = '';
+    for (let i = 0; i < len; i++) hex += bytes[i].toString(16).padStart(2, '0');
+    try { localStorage.setItem('pb.save.' + carts[idx].id, hex); } catch (e) { /* ignore */ }
+    engine.ex.pb_save_pop();
+  }
+}
+
 function play(c) {
   ensureAudio();
   current = c;
@@ -202,6 +227,7 @@ function play(c) {
   setHeld('dpad', 0); setHeld('buttons', 0);
   latch = 0;
   engine.ex.pb_set_mode(settings.color ? 1 : 0, settings.tint);
+  loadSave(c);
   engine.ex.pb_insert(c.index);
   toggleMenu(false);
   applyMute();
@@ -210,6 +236,7 @@ function play(c) {
 
 function eject() {
   engine.ex.pb_eject();
+  pollSaves();
   saveHigh(true);
   current = null;
   toggleMenu(false);
@@ -242,6 +269,7 @@ function frame(t) {
     const s = engine.ex.pb_score();
     if (!engine.ex.pb_booting() && s > (high[current.id] || 0)) { high[current.id] = s; highDirty = highDirty || 1; }
     saveHigh(false);
+    if (++saveTick >= 120) { saveTick = 0; pollSaves(); }
   }
   const rc = engine.ex.pb_render_count();
   if (rc !== lastRender) {
@@ -293,7 +321,7 @@ function bindUi() {
   $('#detail').addEventListener('click', (e) => { if (e.target.id === 'detail') $('#detail').hidden = true; });
   $('#menuBtn').addEventListener('click', () => toggleMenu(true));
   $('#resumeBtn').addEventListener('click', () => toggleMenu(false));
-  $('#restartBtn').addEventListener('click', () => { const c = current; if (c) { engine.ex.pb_insert(c.index); lastRender = -1; toggleMenu(false); } });
+  $('#restartBtn').addEventListener('click', () => { const c = current; if (c) { loadSave(c); engine.ex.pb_insert(c.index); lastRender = -1; toggleMenu(false); } });
   $('#ejectBtn').addEventListener('click', eject);
   $('#settingsBtn').addEventListener('click', () => { $('#settings').hidden = false; });
   $('#shelfSettings').addEventListener('click', () => { $('#settings').hidden = false; });
@@ -304,7 +332,7 @@ function bindUi() {
   $('#optGrid').addEventListener('change', (e) => { settings.grid = e.target.checked; applySettings(); });
   $('#optSound').addEventListener('change', (e) => { settings.sound = e.target.checked; if (settings.sound) ensureAudio(); applySettings(); });
   $('#swatches').addEventListener('click', (e) => { const k = e.target.dataset && e.target.dataset.k; if (k) { settings.shell = k; applySettings(); } });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && current) toggleMenu(true); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && current) { engine.ex.pb_flush_save(); pollSaves(); toggleMenu(true); } });
   // iOS Safari: stop pinch/double-tap zoom and rubber-banding while playing.
   ['gesturestart', 'gesturechange', 'gestureend'].forEach((n) => document.addEventListener(n, (e) => e.preventDefault()));
   // Double-tap zoom: swallow the second tap of a quick pair while a game is on screen.
