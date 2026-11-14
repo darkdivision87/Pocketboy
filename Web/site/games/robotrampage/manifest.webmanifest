@@ -1,0 +1,15 @@
+{
+  "name": "Robot Rampage",
+  "short_name": "Robot Rampage",
+  "description": "Blast friendly toy robots into confetti in a colourful toy factory.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#2a1458",
+  "theme_color": "#2a1458",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

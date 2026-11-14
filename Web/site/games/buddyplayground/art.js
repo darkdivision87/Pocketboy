@@ -29,7 +29,7 @@ export function drawBeachBall(c, r, rot = 0) {
   c.beginPath(); c.arc(0, 0, r, 0, TAU); c.clip();
   for (let i = 0; i < 6; i++) { c.fillStyle = cols[i]; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, r * 1.1, i * TAU / 6, (i + 1) * TAU / 6); c.closePath(); c.fill(); }
   c.restore(); c.save();
-  c.fillStyle = rg(c, -r * 0.35, -r * 0.4, r * 0.05, r * 1.1, 'rgba(255,255,255,0.55)', 'rgba(0,0,40,0.18)'); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+  c.fillStyle = rg(c, -r * 0.35, -r * 0.4, r * 0.05, r * 1.1, 'rgba(255,255,255,0.5)', 'rgba(0,0,40,0.08)'); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
   c.strokeStyle = 'rgba(40,40,90,0.35)'; c.lineWidth = Math.max(2, r * 0.07); c.stroke();
   c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, r * 0.13, 0, TAU); c.fill(); c.restore();
 }
@@ -219,7 +219,7 @@ export function drawHead(c, id, R, t = 0) {
 // neck accessories drawn in torso space (origin = torso centre, w/h = torso size)
 export function drawNeck(c, id, w, h) {
   c.lineJoin = 'round'; c.lineCap = 'round';
-  c.save(); c.translate(0, -h * 0.5 + h * 0.1);
+  c.save(); c.translate(0, -h * 0.5 + h * 0.26);
   if (id === 'bowtie') {
     for (const s of [-1, 1]) { c.beginPath(); c.moveTo(0, 0); c.lineTo(s * w * 0.3, -w * 0.15); c.quadraticCurveTo(s * w * 0.36, 0, s * w * 0.3, w * 0.15); c.closePath(); fillStroke(c, lg(c, 0, -w * 0.15, 0, w * 0.15, '#ff6a8a', '#d92a58'), '#8f1636', 3); }
     c.beginPath(); c.arc(0, 0, w * 0.07, 0, TAU); fillStroke(c, '#ff8fb0', '#8f1636', 2.5);
@@ -235,7 +235,7 @@ export function drawBack(c, id, w, h, flutter, t) {
   c.lineJoin = 'round'; c.lineCap = 'round';
   if (id === 'cape') {
     const f = Math.max(-34, Math.min(34, flutter));
-    c.beginPath(); c.moveTo(-w * 0.42, -h * 0.4); c.quadraticCurveTo(-w * 0.72 + f, h * 0.15, -w * 0.62 + f * 1.5, h * 0.7); c.quadraticCurveTo(0 + f * 1.2, h * 0.84, w * 0.62 + f * 1.5, h * 0.7); c.quadraticCurveTo(w * 0.72 + f, h * 0.15, w * 0.42, -h * 0.4); c.closePath();
+    c.beginPath(); c.moveTo(-w * 0.46, -h * 0.4); c.quadraticCurveTo(-w * 0.95 + f, h * 0.1, -w * 0.82 + f * 1.5, h * 0.78); c.quadraticCurveTo(0 + f * 1.2, h * 0.92, w * 0.82 + f * 1.5, h * 0.78); c.quadraticCurveTo(w * 0.95 + f, h * 0.1, w * 0.46, -h * 0.4); c.closePath();
     fillStroke(c, lg(c, 0, -h * 0.4, 0, h * 0.8, '#ff5d6c', '#c7213a'), '#8a1228', 4);
     c.strokeStyle = 'rgba(255,255,255,0.25)'; c.lineWidth = 3; c.beginPath(); c.moveTo(-w * 0.2, -h * 0.2); c.quadraticCurveTo(-w * 0.28 + f * 0.6, h * 0.2, -w * 0.3 + f, h * 0.6); c.stroke();
   } else if (id === 'wings') {
@@ -346,7 +346,7 @@ const ROOM_DRAW = {
     c.save(); c.beginPath(); c.arc(ex, ey, er, 0, TAU); c.clip(); c.fillStyle = '#4fc772'; c.beginPath(); c.ellipse(ex - er * 0.25, ey - er * 0.1, er * 0.45, er * 0.3, 0.5, 0, TAU); c.ellipse(ex + er * 0.35, ey + er * 0.35, er * 0.3, er * 0.2, -0.3, 0, TAU); c.fill(); c.restore();
     glow(c, ex, ey, er * 2, 'rgba(120,200,255,0.25)');
     // moon surface
-    c.fillStyle = lg(c, 0, fy, 0, H, '#cfc8e8', '#8f86b8'); c.beginPath(); c.moveTo(0, fy + 6); for (let x = 0; x <= W; x += 30) c.lineTo(x, fy + 4 + Math.sin(x * 0.02) * 4); c.lineTo(W, H); c.lineTo(0, H); c.fill();
+    c.fillStyle = lg(c, 0, fy, 0, H, '#cfc8e8', '#8f86b8'); c.beginPath(); c.moveTo(0, fy + 6); for (let x = 0; x <= W; x += 30) c.lineTo(x, fy + 4 + Math.sin(x * 0.02) * 4); c.lineTo(W + 30, fy + 4); c.lineTo(W + 30, H); c.lineTo(0, H); c.fill();
     c.fillStyle = 'rgba(255,255,255,0.3)'; c.fillRect(0, fy + 2, W, 3);
     for (let i = 0; i < 9; i++) { const x = R() * W, y = fy + 24 + R() * (H - fy - 24), r = 14 + R() * 30; c.fillStyle = 'rgba(70,60,110,0.35)'; c.beginPath(); c.ellipse(x, y, r, r * 0.32, 0, 0, TAU); c.fill(); c.fillStyle = 'rgba(255,255,255,0.25)'; c.beginPath(); c.ellipse(x, y + 2, r * 0.9, r * 0.25, 0, Math.PI, TAU); c.fill(); }
     // flag + rover-ish ufo
