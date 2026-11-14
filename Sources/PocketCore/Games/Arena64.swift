@@ -865,7 +865,7 @@ final class Arena64: Game {
         if input.b {
             strafe = Float(input.dx)
         } else {
-            ang = Arena64.wrapAngle(ang + Float(input.dx) * turnSpd)
+            ang = Arena64.wrapAngle(ang + Float(input.dx) * turnSpd + touchTurn)
         }
         let fx: Float = cos(ang)
         let fy: Float = sin(ang)
@@ -1167,7 +1167,48 @@ final class Arena64: Game {
         if hitMarker > 0 { hitMarker -= 1 }
     }
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchTurn: Float = 0
+    private var prevTouchX = 0
+    private var touchFire = 0
+    private var touchAuto = false
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchTurn = 0
+        if touch.began {
+            e.pressed.insert(.a)
+            prevTouchX = touch.x
+            touchAuto = false
+        }
+        if touch.tapped { touchFire = 2 }
+        if touch.longPressed { touchAuto = true }
+        if touch.down {
+            let d: Int = touch.x - prevTouchX
+            prevTouchX = touch.x
+            touchTurn = max(-0.15, min(0.15, Float(d) * 0.006))
+            if touch.y >= 192 {
+                e.held.insert(.up)
+            } else if touch.y < 58 {
+                e.held.insert(.down)
+            }
+            if touchAuto { e.held.insert(.a) }
+        } else {
+            touchAuto = false
+        }
+        if touchFire > 0 {
+            touchFire -= 1
+            e.held.insert(.a)
+        }
+        return e
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frame += 1
         updateWorldFx()
         switch phase {

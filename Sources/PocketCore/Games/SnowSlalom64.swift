@@ -810,7 +810,47 @@ final class SnowSlalom64: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchSteer: Float = 0
+    private var touchTrick = 0
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchSteer = 0
+        if touch.began { e.pressed.insert(.a) }
+        if touch.tapped { touchTrick = 40 }
+        if touch.down {
+            if touch.y >= 230 {
+                e.held.insert(.b)
+                e.held.remove(.a)
+            } else {
+                e.held.insert(.a)
+            }
+            let ox: Float = Float(touch.x - 160)
+            if ox > 12 {
+                touchSteer = min(1, (ox - 12) / 100)
+            } else if ox < -12 {
+                touchSteer = max(-1, (ox + 12) / 100)
+            }
+        }
+        if touchTrick > 0 {
+            touchTrick -= 1
+            if !grounded { e.held.insert(.b) }
+        }
+        return e
+    }
+
+    private func steerAxis(_ input: InputState) -> Float {
+        if touchSteer != 0 { return touchSteer }
+        return Float(input.dx)
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frame += 1
         lastInputA = input.a
         if msgTimer > 0 { msgTimer -= 1 }
@@ -950,7 +990,7 @@ final class SnowSlalom64: Game {
             if input.a && grounded { steerRate *= 0.8 }
             if input.b && grounded { steerRate *= 1.25 }
             if !grounded { steerRate *= 0.35 }
-            let target: Float = Float(input.dx) * steerRate
+            let target: Float = steerAxis(input) * steerRate
             xVel += (target - xVel) * 0.25 * grip
         }
         speed = clamp(speed, 0, 1.45)

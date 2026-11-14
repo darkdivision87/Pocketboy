@@ -489,7 +489,48 @@ final class SkyGlider64: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchBank: Float = 0
+    private var touchClimb: Float = 0
+    private var touchBoost = 0
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchBank = 0
+        touchClimb = 0
+        if touch.began { e.pressed.insert(.a) }
+        if touch.tapped { touchBoost = 30 }
+        if touch.down {
+            let ox: Float = Float(touch.x - 160)
+            if ox > 12 {
+                touchBank = min(1, (ox - 12) / 100)
+            } else if ox < -12 {
+                touchBank = max(-1, (ox + 12) / 100)
+            }
+            if touch.y >= 245 {
+                e.held.insert(.b)
+            } else {
+                let oy: Float = Float(144 - touch.y)
+                if oy > 12 {
+                    touchClimb = min(1, (oy - 12) / 90)
+                } else if oy < -12 {
+                    touchClimb = max(-1, (oy + 12) / 90)
+                }
+            }
+        }
+        if touchBoost > 0 {
+            touchBoost -= 1
+            e.held.insert(.a)
+        }
+        return e
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frame += 1
         if msgTimer > 0 { msgTimer -= 1 }
         switch phase {
@@ -523,10 +564,16 @@ final class SkyGlider64: Game {
 
     private func stepFlight(_ input: InputState) {
         let tr = SkyGlider64.terrain
-        let dxIn: Float = Float(input.dx)
-        let climbIn: Float = -Float(input.dy)
+        var dxIn: Float = Float(input.dx)
+        var climbIn: Float = -Float(input.dy)
+        var pitchActive: Bool = input.dy != 0
+        if touchBank != 0 { dxIn = touchBank }
+        if touchClimb != 0 {
+            climbIn = touchClimb
+            pitchActive = true
+        }
         // pitch
-        if input.dy != 0 {
+        if pitchActive {
             pitch += (climbIn * 0.5 - pitch) * 0.06
         } else {
             pitch += (-0.01 - pitch) * 0.02

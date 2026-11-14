@@ -758,6 +758,14 @@ final class TurretZone64: Game {
     private var bonusText = 0
 
     override var score: Int { return max(0, scoreValue) }
+    override var wantsPointer: Bool { return true }
+
+    private var retX: Float = 160
+    private var retY: Float = 128
+    private var touchOn = false
+    private var touchFire = false
+    private var touchBomb = false
+    private var lockLimit: Float = 80
 
     override init() {
         super.init()
@@ -1173,6 +1181,43 @@ final class TurretZone64: Game {
         pitch = clamp(pitch, -0.28, 0.28)
     }
 
+    private func bombButtonHit(_ x: Int, _ y: Int) -> Bool {
+        let dx = x - 284
+        let dy = y - 222
+        return dx * dx + dy * dy <= 30 * 30
+    }
+
+    private func processTouch(_ input: InputState) {
+        let ptr = input.pointer
+        touchOn = false
+        touchFire = false
+        touchBomb = false
+        var tx: Float = 160
+        var ty: Float = Float(TurretZone64.eyeY)
+        let activePhase: Bool = phase == .playing || phase == .clear
+        if ptr.down && ptr.x >= 0 && activePhase {
+            let onBomb = bombButtonHit(ptr.x, ptr.y)
+            if onBomb {
+                if ptr.pressed { touchBomb = true }
+            } else if ptr.y < 250 {
+                touchOn = true
+                tx = Float(clamp(ptr.x, 0, 319))
+                ty = Float(clamp(ptr.y, 20, 245))
+                if ptr.x < 36 {
+                    yaw = TurretZone64.norm2Pi(yaw - 0.03)
+                } else if ptr.x > 284 {
+                    yaw = TurretZone64.norm2Pi(yaw + 0.03)
+                } else {
+                    touchFire = true
+                }
+            }
+        }
+        let k: Float = touchOn ? 0.4 : 0.15
+        retX += (tx - retX) * k
+        retY += (ty - retY) * k
+        lockLimit = touchOn ? 30 : 80
+    }
+
     private func updateLock() {
         lockKind = 0
         lockIdx = -1
@@ -1183,10 +1228,10 @@ final class TurretZone64: Game {
             if !b.alive { continue }
             let p = proj(b.az, b.d, b.h, yaw, hz)
             if p.2 < 0 { continue }
-            let dx: Float = p.0 - 160.0
-            let dy: Float = p.1 - Float(TurretZone64.eyeY)
+            let dx: Float = p.0 - retX
+            let dy: Float = p.1 - retY
             let dist: Float = sqrt(dx * dx + dy * dy)
-            if dist > 80 { continue }
+            if dist > lockLimit { continue }
             let sc: Float = dist - 30.0
             if sc < best {
                 best = sc
@@ -1205,10 +1250,10 @@ final class TurretZone64: Game {
             let p = proj(e.az, e.d, center, yaw, hz)
             if p.2 < 0 { continue }
             let rad: Float = clamp(TurretZone64.focal * hh * 0.5 / p.2, 6, 160)
-            let dx: Float = p.0 - 160.0
-            let dy: Float = p.1 - Float(TurretZone64.eyeY)
+            let dx: Float = p.0 - retX
+            let dy: Float = p.1 - retY
             let dist: Float = sqrt(dx * dx + dy * dy)
-            if dist > 80 + rad * 0.8 { continue }
+            if dist > lockLimit + rad * 0.8 { continue }
             var sc: Float = max(0, dist - rad * 0.7)
             if e.kind == 3 { sc -= 10 }
             if sc < best {
@@ -1228,6 +1273,10 @@ final class TurretZone64: Game {
         let x0 = gunSide == 0 ? 136 : 184
         var x1 = 160 + rng.int(40) - 20
         var y1 = 96 + rng.int(30)
+        if touchOn {
+            x1 = Int(retX)
+            y1 = Int(retY)
+        }
         if lockKind > 0 {
             x1 = Int(clamp(lockSX, -200, 520))
             y1 = Int(clamp(lockSY, -100, 400))
@@ -1356,6 +1405,7 @@ final class TurretZone64: Game {
 
     private func updateCombat(_ input: InputState, _ spawning: Bool) {
         updateControls(input)
+        processTouch(input)
         enemies = enemies.filter { $0.alive }
         balls = balls.filter { $0.alive }
         if spawning && waveBanner < 70 && !queue.isEmpty {
@@ -1374,8 +1424,8 @@ final class TurretZone64: Game {
         for i in 0..<enemies.count { updateEnemy(i) }
         updateBalls()
         updateLock()
-        let firing = input.a && phase == .playing
-        if firing && lockKind > 0 {
+        let firing = (input.a || touchFire) && phase == .playing
+        if firing && lockKind > 0 && !touchOn {
             let ta: Float = lockKind == 1 ? enemies[lockIdx].az : balls[lockIdx].az
             let diff: Float = TurretZone64.wrapAngle(ta - yaw)
             let maxS: Float = input.dx != 0 ? 0.006 : 0.016
@@ -1388,7 +1438,7 @@ final class TurretZone64: Game {
         if firing && fireCD <= 0 {
             fireShot(input)
         }
-        if input.bPressed && phase == .playing {
+        if (input.bPressed || touchBomb) && phase == .playing {
             if bomb >= 100 {
                 detonateBomb()
             } else {
@@ -1441,7 +1491,7 @@ final class TurretZone64: Game {
         switch phase {
         case .title:
             yaw = TurretZone64.norm2Pi(yaw + 0.004)
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || input.pointer.pressed {
                 play(.confirm)
                 beginGame()
             }
@@ -1482,7 +1532,17 @@ final class TurretZone64: Game {
                 cardSel = (cardSel + 1) % 3
                 play(.select)
             }
-            if (input.aPressed || input.startPressed) && upgradeT <= 0 {
+            var tapped = false
+            if input.pointer.pressed && upgradeT <= 0 {
+                for i in 0..<3 {
+                    let x = 14 + i * 100
+                    if input.pointer.x >= x - 4 && input.pointer.x < x + 96 && input.pointer.y >= 62 && input.pointer.y < 228 {
+                        cardSel = i
+                        tapped = true
+                    }
+                }
+            }
+            if ((input.aPressed || input.startPressed) && upgradeT <= 0) || tapped {
                 applyUpgrade(cards[cardSel])
                 play(.powerup)
                 phase = .playing
@@ -1494,7 +1554,693 @@ final class TurretZone64: Game {
                 if input.startPressed {
                     play(.confirm)
                     beginGame()
-                } else if input.aPressed {
+                } else if input.aPressed || input.pointer.pressed {
+                    play(.confirm)
+                    if victory && !endless {
+                        endless = true
+                        victory = false
+                        baseHP = min(baseMax, baseHP + 50)
+                        enemies = []
+                        balls = []
+                        makeCards()
+                        phase = .upgrade
+                    } else {
+                        beginGame()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Rendering (pixel pass)
+
+    private func drawSky(_ p: UnsafeMutablePointer<UInt32>, _ w: Int, _ hz: Int, _ pal: [Int]) {
+        let top0 = pal[0]
+        let top1 = pal[1]
+        let top2 = pal[2]
+        let hor0 = pal[3]
+        let hor1 = pal[4]
+        let hor2 = pal[5]
+        let den = max(1, hz)
+        for y in 0..<hz {
+            let t = (y * 256) / den
+            let r = top0 + (((hor0 - top0) * t) >> 8)
+            let g = top1 + (((hor1 - top1) * t) >> 8)
+            let b = top2 + (((hor2 - top2) * t) >> 8)
+            let c = TurretZone64.rgb(r, g, b)
+            let base = y * w
+            for x in 0..<w { p[base + x] = c }
+        }
+    }
+
+    private func drawSun(_ p: UnsafeMutablePointer<UInt32>, _ w: Int, _ h: Int, _ yawV: Float, _ hz: Int, _ pal: Int) {
+        let daz: Float = TurretZone64.wrapAngle(1.1 - yawV)
+        if abs(daz) > 1.0 { return }
+        let sx = 160 + Int(TurretZone64.focal * tan(daz))
+        let sy = hz - 78
+        let rad = pal == 0 ? 17 : 24
+        var core = TurretZone64.rgb(255, 250, 190)
+        var halo = TurretZone64.rgb(255, 240, 150)
+        if pal == 1 {
+            core = TurretZone64.rgb(255, 230, 150)
+            halo = TurretZone64.rgb(255, 190, 120)
+        }
+        if pal == 2 {
+            core = TurretZone64.rgb(255, 200, 200)
+            halo = TurretZone64.rgb(255, 150, 190)
+        }
+        let r2 = rad * rad
+        let h2 = (rad + 8) * (rad + 8)
+        let y0 = max(0, sy - rad - 8)
+        let y1 = min(min(h, hz), sy + rad + 9)
+        let x0 = max(0, sx - rad - 8)
+        let x1 = min(w, sx + rad + 9)
+        if y0 >= y1 || x0 >= x1 { return }
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                let dx = x - sx
+                let dy = y - sy
+                let d2 = dx * dx + dy * dy
+                if d2 <= r2 {
+                    p[y * w + x] = core
+                } else if d2 <= h2 {
+                    p[y * w + x] = TurretZone64.tintTo(p[y * w + x], 120, 255, 245, 190)
+                    if d2 < h2 / 2 { p[y * w + x] = halo }
+                }
+            }
+        }
+    }
+
+    private func drawLayer(_ p: UnsafeMutablePointer<UInt32>, _ w: Int, _ layer: Layer, _ yTop: Int, _ yLimit: Int,
+                           _ yawV: Float, _ extend: Bool, _ tintAmt: Int, _ tr: Int, _ tg: Int, _ tb: Int) {
+        let colAng = TurretZone64.colAng
+        let lw = layer.w
+        let lh = layer.h
+        let scale: Float = Float(lw) / TurretZone64.twoPi
+        layer.px.withUnsafeBufferPointer { src in
+            for x in 0..<320 {
+                let az: Float = yawV + colAng[x]
+                var tx = Int(az * scale)
+                tx = ((tx % lw) + lw) % lw
+                let colBase = tx * lh
+                var y0 = yTop
+                var y1 = yTop + lh
+                if extend { y1 = yLimit }
+                if y1 > yLimit { y1 = yLimit }
+                if y0 < 0 { y0 = 0 }
+                if y0 >= y1 { continue }
+                for y in y0..<y1 {
+                    var ty = y - yTop
+                    if ty >= lh { ty = lh - 1 }
+                    if ty < 0 { continue }
+                    let c = src[colBase + ty]
+                    if c == 0 { continue }
+                    if tintAmt > 0 {
+                        p[y * w + x] = TurretZone64.tintTo(c, tintAmt, tr, tg, tb)
+                    } else {
+                        p[y * w + x] = c
+                    }
+                }
+            }
+        }
+    }
+
+    private func drawGround(_ p: UnsafeMutablePointer<UInt32>, _ w: Int, _ h: Int, _ yawV: Float, _ hz: Int, _ pal: [Int]) {
+        let ic = TurretZone64.invCos
+        let colAng = TurretZone64.colAng
+        let hr = pal[3]
+        let hg = pal[4]
+        let hb = pal[5]
+        let tr = pal[6]
+        let tg = pal[7]
+        let tb = pal[8]
+        let ta = pal[9]
+        let hazeC = TurretZone64.rgb(hr, hg, hb)
+        let startY = max(0, hz)
+        if startY >= h { return }
+        for y in startY..<h {
+            let dy: Float = Float(y - hz) + 0.5
+            let zr: Float = TurretZone64.focal * TurretZone64.groundDrop / dy
+            let base = y * w
+            if zr > 60 {
+                for x in 0..<w { p[base + x] = hazeC }
+                continue
+            }
+            for x in 0..<w {
+                let d: Float = zr * ic[x]
+                if d >= 40 {
+                    p[base + x] = hazeC
+                    continue
+                }
+                let az: Float = yawV + colAng[x] + 8.0
+                var r = 255
+                var g = 255
+                var b = 255
+                if d < 6.0 {
+                    let k = (Int(az * d * 0.7) + Int(d * 0.9)) & 1
+                    if k == 0 {
+                        r = 255; g = 238; b = 206
+                    } else {
+                        r = 255; g = 196; b = 220
+                    }
+                } else if d < 12.9 {
+                    let k = (Int(az * d * 0.55) + Int(d * 0.7)) & 1
+                    if k == 0 {
+                        r = 170; g = 232; b = 226
+                    } else {
+                        r = 140; g = 210; b = 240
+                    }
+                } else if d < 16.1 {
+                    r = 84; g = 90; b = 128
+                    if d > 14.0 && d < 14.6 {
+                        if (Int(az * d * 1.6) & 3) < 2 {
+                            r = 255; g = 220; b = 70
+                        }
+                    }
+                } else if d < 26.0 {
+                    let k = (Int(az * d * 0.4) + Int(d * 0.5)) & 1
+                    if d < 16.9 {
+                        r = 250; g = 250; b = 250
+                    } else if k == 0 {
+                        r = 112; g = 222; b = 120
+                    } else {
+                        r = 92; g = 200; b = 108
+                    }
+                } else {
+                    let k = (Int(az * d * 0.35) + Int(d * 0.4)) & 3
+                    if k == 0 {
+                        r = 255; g = 170; b = 190
+                    } else if k == 1 {
+                        r = 255; g = 224; b = 120
+                    } else if k == 2 {
+                        r = 150; g = 200; b = 255
+                    } else {
+                        r = 196; g = 156; b = 255
+                    }
+                }
+                if ta > 0 {
+                    r += ((tr - r) * ta) >> 9
+                    g += ((tg - g) * ta) >> 9
+                    b += ((tb - b) * ta) >> 9
+                }
+                var fa = Int((d - 9.0) * 6.0)
+                if fa < 0 { fa = 0 }
+                if fa > 215 { fa = 215 }
+                r += ((hr - r) * fa) >> 8
+                g += ((hg - g) * fa) >> 8
+                b += ((hb - b) * fa) >> 8
+                p[base + x] = 0xFF00_0000 | UInt32(r & 255) | (UInt32(g & 255) << 8) | (UInt32(b & 255) << 16)
+            }
+        }
+    }
+
+    private func blit(_ p: UnsafeMutablePointer<UInt32>, _ w: Int, _ h: Int, _ it: Bill, _ hazeR: Int, _ hazeG: Int, _ hazeB: Int) {
+        let sprs = TurretZone64.sprites
+        if it.spr < 0 || it.spr >= sprs.count { return }
+        let spr = sprs[it.spr]
+        let sw = it.sw
+        let sh = it.sh
+        if sw < 1 || sh < 1 { return }
+        let x0 = it.sx - sw / 2
+        let y0 = it.bottom - sh
+        let xs = max(0, x0)
+        let xe = min(w, x0 + sw)
+        let ys = max(0, y0)
+        let ye = min(h, it.bottom)
+        if xs >= xe || ys >= ye { return }
+        let stepY = (spr.h << 16) / sh
+        let stepX = (spr.w << 16) / sw
+        let sprW = spr.w
+        let sprH = spr.h
+        let white = it.white
+        let orange = it.orange
+        let fog = it.fog
+        spr.pix.withUnsafeBufferPointer { sp in
+            for x in xs..<xe {
+                let sxp = max(0, min(sprW - 1, ((x - x0) * stepX) >> 16))
+                for y in ys..<ye {
+                    let syp = max(0, min(sprH - 1, ((y - y0) * stepY) >> 16))
+                    let c = sp[syp * sprW + sxp]
+                    if c == 0 { continue }
+                    var o = c
+                    if fog > 0 { o = TurretZone64.tintTo(o, fog, hazeR, hazeG, hazeB) }
+                    if white > 0 {
+                        if orange {
+                            o = TurretZone64.tintTo(o, white, 255, 140, 30)
+                        } else {
+                            o = TurretZone64.tintTo(o, white, 255, 255, 255)
+                        }
+                    }
+                    p[y * w + x] = o
+                }
+            }
+        }
+    }
+
+    private func tint(_ p: UnsafeMutablePointer<UInt32>, _ w: Int, _ h: Int, _ tr: Int, _ tg: Int, _ tb: Int, _ amt: Int) {
+        let n = w * h
+        for i in 0..<n {
+            p[i] = TurretZone64.tintTo(p[i], amt, tr, tg, tb)
+        }
+    }
+
+    private func addBill(_ sx: Float, _ bottom: Float, _ z: Float, _ spr: Int, _ worldH: Float, _ white: Int,
+                         _ orange: Bool, _ hpFrac: Float, _ boss: Bool) {
+        if !(sx > -1500 && sx < 1800) { return }
+        let shf: Float = TurretZone64.focal * worldH / z
+        if !(shf < 1000 && shf >= 1) { return }
+        let sprs = TurretZone64.sprites
+        if spr < 0 || spr >= sprs.count { return }
+        let aspect: Float = Float(sprs[spr].w) / Float(sprs[spr].h)
+        let swf: Float = shf * aspect
+        if !(swf < 1500) { return }
+        let sh = Int(shf)
+        let sw = Int(swf)
+        if sw < 1 || sh < 1 { return }
+        let sxi = Int(sx)
+        if sxi + sw / 2 < 0 || sxi - sw / 2 > 320 { return }
+        if !(bottom > -1500 && bottom < 1500) { return }
+        var fog = Int((z - 16.0) * 5.0)
+        if fog < 0 { fog = 0 }
+        if fog > 140 { fog = 140 }
+        bills.append(Bill(depth: z, sx: sxi, bottom: Int(bottom), sw: sw, sh: sh, spr: spr, white: white,
+                          orange: orange, fog: fog, hpFrac: hpFrac, boss: boss))
+    }
+
+    private func buildBills(_ yawV: Float, _ hz: Float) {
+        bills.removeAll(keepingCapacity: true)
+        for e in enemies {
+            if !e.alive { continue }
+            let hh: Float = TurretZone64.enemyHeight(e.kind, e.variant)
+            let bot: Float = TurretZone64.enemyBottom(e)
+            let p = proj(e.az, e.d, bot, yawV, hz)
+            if p.2 < 0 { continue }
+            var white = 0
+            var orange = false
+            if e.flash > 0 {
+                white = 200
+            } else if e.state == 2 {
+                orange = true
+                white = ((e.timer / 3) & 1) == 0 ? 190 : 80
+            }
+            let wob: Float = 1.0 + 0.04 * sin(e.phase * 2.1)
+            var frac: Float = -1
+            if e.kind >= 2 || e.hp < e.maxHp { frac = e.hp / e.maxHp }
+            addBill(p.0, p.1, p.2, TurretZone64.enemySprite(e), hh * wob, white, orange, frac, e.kind == 3)
+        }
+        for b in balls {
+            if !b.alive { continue }
+            let s: Float = b.kind == 1 ? 1.3 : 1.0
+            let p = proj(b.az, b.d, b.h - s * 0.5, yawV, hz)
+            if p.2 < 0 { continue }
+            addBill(p.0, p.1, p.2, b.kind == 1 ? TurretZone64.sprBomb : TurretZone64.sprBall, s, 0, false, -1, false)
+        }
+        bills.sort { $0.depth > $1.depth }
+    }
+
+    // MARK: - Draw
+
+    override func drawTrueColor(_ b: TrueColorBuffer) {
+        var shx: Float = 0
+        var shy = 0
+        if shake > 0 && phase != .title {
+            shx = sin(Float(frame) * 1.7) * 0.0035 * Float(shake)
+            shy = Int(cos(Float(frame) * 2.3) * 0.5 * Float(shake))
+        }
+        let yawV: Float = yaw + shx
+        var hzI = TurretZone64.eyeY + Int(pitch * 170.0) + shy
+        hzI = max(50, min(210, hzI))
+        let hzF: Float = Float(hzI)
+        let palIdx = max(0, min(2, (max(1, wave) - 1) / 4))
+        let pal = TurretZone64.skyPal[palIdx]
+        buildBills(yawV, hzF)
+        let list = bills
+        let flashBomb = bombFlash > 0 ? bombFlash * 9 : 0
+        let flashHit = dmgFlash > 0 ? min(120, dmgFlash * 8) : 0
+        let drift = Float(frame) * 0.0004
+        b.withPixels { p, w, h in
+            if w < 320 || h < 288 { return }
+            self.drawSky(p, w, hzI, pal)
+            self.drawSun(p, w, h, yawV, hzI, palIdx)
+            let ta = pal[9]
+            let cloudTop = (hzI - 128) * 6 / 10 + 14
+            self.drawLayer(p, w, TurretZone64.layerClouds, cloudTop, hzI, yawV * 0.5 + drift, false, ta / 2, pal[6], pal[7], pal[8])
+            self.drawLayer(p, w, TurretZone64.layerFar, hzI - 70 + 4, hzI, yawV, true, ta, pal[6], pal[7], pal[8])
+            self.drawLayer(p, w, TurretZone64.layerNear, hzI - 80, hzI, yawV, false, ta, pal[6], pal[7], pal[8])
+            self.drawGround(p, w, h, yawV, hzI, pal)
+            for it in list { self.blit(p, w, h, it, pal[3], pal[4], pal[5]) }
+            if flashBomb > 0 { self.tint(p, w, h, 255, 255, 255, min(230, flashBomb)) }
+            if flashHit > 0 { self.tint(p, w, h, 255, 40, 50, flashHit) }
+        }
+        if phase != .title {
+            drawBursts(b, yawV, hzF)
+            drawParts(b, yawV, hzF)
+            drawBarMarks(b, list)
+            drawTracers(b)
+            drawPops(b, yawV, hzF)
+            drawLock(b)
+            drawTurret(b)
+            drawArrows(b)
+            drawHUD(b)
+        }
+        drawOverlays(b)
+    }
+
+    // MARK: - HUD helpers
+
+    private func otext(_ b: TrueColorBuffer, _ s: String, _ x: Int, _ y: Int, _ c: UInt32, _ scale: Int) {
+        let k = max(1, scale / 2)
+        let o = TurretZone64.cBlack
+        b.text(s, x - k, y, o, scale: scale)
+        b.text(s, x + k, y, o, scale: scale)
+        b.text(s, x, y - k, o, scale: scale)
+        b.text(s, x, y + k, o, scale: scale)
+        b.text(s, x, y, c, scale: scale)
+    }
+
+    private func ctext(_ b: TrueColorBuffer, _ s: String, _ y: Int, _ c: UInt32, _ scale: Int) {
+        let tw = b.textWidth(s, scale: scale)
+        otext(b, s, (b.width - tw) / 2, y, c, scale)
+    }
+
+    private func bar(_ b: TrueColorBuffer, _ x: Int, _ y: Int, _ w: Int, _ h: Int, _ frac: Float, _ c: UInt32) {
+        b.fillRect(x - 2, y - 2, w + 4, h + 4, TurretZone64.cBlack)
+        b.fillRect(x, y, w, h, TurretZone64.cBarBack)
+        let fw = Int(clamp(frac, 0, 1) * Float(w))
+        if fw > 0 {
+            b.fillRect(x, y, fw, h, c)
+            b.fillRect(x, y, fw, 2, TurretZone64.cWhite)
+        }
+    }
+
+    private func fillDisc(_ b: TrueColorBuffer, _ cx: Int, _ cy: Int, _ r: Int, _ c: UInt32) {
+        if r < 1 || r > 400 { return }
+        for dy in -r...r {
+            let fy: Float = Float(dy)
+            let half = Int(sqrt(max(0, Float(r * r) - fy * fy)))
+            b.fillRect(cx - half, cy + dy, half * 2 + 1, 1, c)
+        }
+    }
+
+    private func thickLine(_ b: TrueColorBuffer, _ x0: Int, _ y0: Int, _ x1: Int, _ y1: Int, _ th: Int, _ c: UInt32) {
+        let dx = x1 - x0
+        let dy = y1 - y0
+        let n = max(abs(dx), abs(dy))
+        if n == 0 {
+            b.fillRect(x0 - th / 2, y0 - th / 2, th, th, c)
+            return
+        }
+        let step = max(1, th / 2)
+        var i = 0
+        while i <= n {
+            let x = x0 + dx * i / n
+            let y = y0 + dy * i / n
+            b.fillRect(x - th / 2, y - th / 2, th, th, c)
+            i += step
+        }
+        b.fillRect(x1 - th / 2, y1 - th / 2, th, th, c)
+    }
+
+    private func drawBursts(_ b: TrueColorBuffer, _ yawV: Float, _ hz: Float) {
+        for u in bursts {
+            let p = proj(u.az, u.d, u.h, yawV, hz)
+            if p.2 < 0 { continue }
+            let t: Float = Float(u.t) / Float(max(1, u.maxT))
+            let rf: Float = TurretZone64.focal * u.size * (0.3 + 0.9 * t) / p.2
+            let r = Int(clamp(rf, 2, 120))
+            let cx = Int(clamp(p.0, -300, 620))
+            let cy = Int(clamp(p.1, -300, 600))
+            if t < 0.35 {
+                fillDisc(b, cx, cy, r, TurretZone64.cWhite)
+                fillDisc(b, cx, cy, r * 2 / 3, TurretZone64.cYellow)
+            } else if t < 0.7 {
+                fillDisc(b, cx, cy, r, TurretZone64.cOrange)
+                fillDisc(b, cx, cy, r * 2 / 3, TurretZone64.cYellow)
+            } else {
+                fillDisc(b, cx, cy, r, TurretZone64.rgb(255, 120, 80))
+                fillDisc(b, cx, cy, r * 3 / 5, TurretZone64.cOrange)
+            }
+        }
+    }
+
+    private func drawParts(_ b: TrueColorBuffer, _ yawV: Float, _ hz: Float) {
+        for q in parts {
+            let p = proj(q.az, q.d, q.h, yawV, hz)
+            if p.2 < 0 { continue }
+            let s = Int(clamp(TurretZone64.focal * q.size / p.2, 2, 8))
+            let x = Int(clamp(p.0, -50, 400))
+            let y = Int(clamp(p.1, -50, 400))
+            b.fillRect(x - s / 2, y - s / 2, s, s, q.col)
+        }
+    }
+
+    private func drawBarMarks(_ b: TrueColorBuffer, _ list: [Bill]) {
+        for it in list {
+            if it.hpFrac < 0 { continue }
+            let w = max(16, min(90, it.sw))
+            let x = it.sx - w / 2
+            let y = it.bottom - it.sh - 8
+            if y < 40 && !it.boss { continue }
+            let col: UInt32 = it.hpFrac > 0.5 ? TurretZone64.cGreen : (it.hpFrac > 0.25 ? TurretZone64.cYellow : TurretZone64.cRed)
+            b.fillRect(x - 1, y - 1, w + 2, 6, TurretZone64.cBlack)
+            b.fillRect(x, y, w, 4, TurretZone64.cBarBack)
+            let fw = Int(clamp(it.hpFrac, 0, 1) * Float(w))
+            if fw > 0 { b.fillRect(x, y, fw, 4, col) }
+        }
+    }
+
+    private func drawTracers(_ b: TrueColorBuffer) {
+        for t in tracers {
+            let life = 5 - t.t
+            if life <= 0 { continue }
+            let c1 = TurretZone64.rgb(70, 170, 255)
+            thickLine(b, t.x0, t.y0, t.x1, t.y1, life > 3 ? 5 : 3, c1)
+            thickLine(b, t.x0, t.y0, t.x1, t.y1, life > 3 ? 2 : 1, TurretZone64.cWhite)
+            if t.t < 2 && t.x1 > -40 && t.x1 < 360 {
+                fillDisc(b, t.x1, t.y1, 7, TurretZone64.cCyan)
+                fillDisc(b, t.x1, t.y1, 3, TurretZone64.cWhite)
+            }
+        }
+    }
+
+    private func drawPops(_ b: TrueColorBuffer, _ yawV: Float, _ hz: Float) {
+        for o in pops {
+            let rise: Float = Float(o.t) * 0.03
+            let p = proj(o.az, o.d, o.h + rise, yawV, hz)
+            if p.2 < 0 { continue }
+            let sc = o.big ? 2 : 1
+            let tw = b.textWidth(o.text, scale: sc)
+            let sx = Int(clamp(p.0, -300, 600)) - tw / 2
+            let sy = Int(clamp(p.1, -100, 400))
+            var c = o.color
+            if o.t > 40 && (o.t & 1) == 0 { c = TurretZone64.cWhite }
+            otext(b, o.text, sx, sy, c, sc)
+        }
+    }
+
+    private func drawLock(_ b: TrueColorBuffer) {
+        if lockKind > 0 && phase != .over {
+            let r = Int(clamp(lockR, 10, 90))
+            let cx = Int(clamp(lockSX, -100, 420))
+            let cy = Int(clamp(lockSY, -100, 400))
+            let c: UInt32 = lockKind == 2 ? TurretZone64.cOrange : TurretZone64.cRed
+            let l = 8
+            b.fillRect(cx - r, cy - r, l, 2, c)
+            b.fillRect(cx - r, cy - r, 2, l, c)
+            b.fillRect(cx + r - l, cy - r, l, 2, c)
+            b.fillRect(cx + r - 2, cy - r, 2, l, c)
+            b.fillRect(cx - r, cy + r - 2, l, 2, c)
+            b.fillRect(cx - r, cy + r - l, 2, l, c)
+            b.fillRect(cx + r - l, cy + r - 2, l, 2, c)
+            b.fillRect(cx + r - 2, cy + r - l, 2, l, c)
+        }
+        // reticle
+        let rc: UInt32 = lockKind > 0 ? TurretZone64.cRed : TurretZone64.cWhite
+        var ex = Int(clamp(retX, 10, 310))
+        var ey = Int(clamp(retY, 10, 245))
+        if lockKind > 0 && touchOn {
+            ex = Int(clamp(lockSX, 10, 310))
+            ey = Int(clamp(lockSY, 10, 245))
+        }
+        b.fillRect(ex - 10, ey - 1, 7, 3, TurretZone64.cBlack)
+        b.fillRect(ex + 4, ey - 1, 7, 3, TurretZone64.cBlack)
+        b.fillRect(ex - 1, ey - 10, 3, 7, TurretZone64.cBlack)
+        b.fillRect(ex - 1, ey + 4, 3, 7, TurretZone64.cBlack)
+        b.fillRect(ex - 9, ey, 5, 1, rc)
+        b.fillRect(ex + 5, ey, 5, 1, rc)
+        b.fillRect(ex, ey - 9, 1, 5, rc)
+        b.fillRect(ex, ey + 5, 1, 5, rc)
+        b.fillRect(ex, ey, 1, 1, rc)
+        if hitMarker > 0 {
+            b.fillRect(ex - 14, ey - 14, 5, 2, TurretZone64.cYellow)
+            b.fillRect(ex + 10, ey - 14, 5, 2, TurretZone64.cYellow)
+            b.fillRect(ex - 14, ey + 13, 5, 2, TurretZone64.cYellow)
+            b.fillRect(ex + 10, ey + 13, 5, 2, TurretZone64.cYellow)
+        }
+        if bombRing > 0 { bombRing -= 1 }
+        if hitMarker > 0 { hitMarker -= 1 }
+        if recoil > 0 { recoil -= 1 }
+        if muzzle > 0 { muzzle -= 1 }
+        if fireCD > 0 { fireCD -= 1 }
+        if hintT > 0 { hintT -= 1 }
+        if comboT > 0 {
+            comboT -= 1
+            if comboT == 0 { combo = 0 }
+        }
+    }
+
+    private func updateCombat(_ input: InputState, _ spawning: Bool) {
+        updateControls(input)
+        processTouch(input)
+        enemies = enemies.filter { $0.alive }
+        balls = balls.filter { $0.alive }
+        if spawning && waveBanner < 70 && !queue.isEmpty {
+            spawnT -= 1
+            if spawnT <= 0 {
+                let k = queue.removeFirst()
+                let v = queueVar.isEmpty ? 0 : queueVar.removeFirst()
+                spawnEnemy(k, v)
+                spawnT = max(30, 82 - 4 * wave) + rng.int(20)
+                if k == 3 {
+                    spawnT = 150
+                    play(.powerup)
+                }
+            }
+        }
+        for i in 0..<enemies.count { updateEnemy(i) }
+        updateBalls()
+        updateLock()
+        let firing = (input.a || touchFire) && phase == .playing
+        if firing && lockKind > 0 && !touchOn {
+            let ta: Float = lockKind == 1 ? enemies[lockIdx].az : balls[lockIdx].az
+            let diff: Float = TurretZone64.wrapAngle(ta - yaw)
+            let maxS: Float = input.dx != 0 ? 0.006 : 0.016
+            yaw = TurretZone64.norm2Pi(yaw + clamp(diff * 0.3, -maxS, maxS))
+            if input.dy == 0 {
+                let dyp: Float = (Float(TurretZone64.eyeY) - lockSY) / 170.0
+                pitch = clamp(pitch + clamp(dyp * 0.2, -0.006, 0.006), -0.28, 0.28)
+            }
+        }
+        if firing && fireCD <= 0 {
+            fireShot(input)
+        }
+        if (input.bPressed || touchBomb) && phase == .playing {
+            if bomb >= 100 {
+                detonateBomb()
+            } else {
+                play(.blip)
+                addPop(yaw, 6, 1.2, "BOMB " + String(Int(bomb)) + "%", TurretZone64.cCyan, false)
+            }
+        }
+    }
+
+    private func makeCards() {
+        var pool: [Int] = [0, 1, 2, 3, 4]
+        var i = pool.count - 1
+        while i > 0 {
+            let j = rng.int(i + 1)
+            let t = pool[i]
+            pool[i] = pool[j]
+            pool[j] = t
+            i -= 1
+        }
+        cards = [pool[0], pool[1], pool[2]]
+        if baseHP * 2 < baseMax && !cards.contains(4) {
+            cards[2] = 4
+        }
+        cardSel = 1
+        upgradeT = 25
+    }
+
+    private func applyUpgrade(_ k: Int) {
+        switch k {
+        case 0:
+            dmgLv += 1
+        case 1:
+            rateLv = min(4, rateLv + 1)
+        case 2:
+            shieldMax += 30
+            shield = shieldMax
+        case 3:
+            chargeLv += 1
+            bomb = min(100, bomb + 40)
+        default:
+            baseMax += 15
+            baseHP = min(baseMax, baseHP + 45)
+        }
+    }
+
+    override func update(_ input: InputState) {
+        frame += 1
+        updateFx()
+        if input.selectPressed { showRadar = !showRadar }
+        switch phase {
+        case .title:
+            yaw = TurretZone64.norm2Pi(yaw + 0.004)
+            if input.aPressed || input.startPressed || input.pointer.pressed {
+                play(.confirm)
+                beginGame()
+            }
+        case .playing:
+            if waveBanner > 0 { waveBanner -= 1 }
+            updateCombat(input, true)
+            if phase == .playing && queue.isEmpty && waveBanner == 0 {
+                var alive = 0
+                for e in enemies where e.alive { alive += 1 }
+                if alive == 0 {
+                    let bonus = 150 * wave + baseHP * 2
+                    scoreValue += bonus
+                    bonusText = bonus
+                    phase = .clear
+                    clearT = 110
+                    play(.win)
+                }
+            }
+        case .clear:
+            clearT -= 1
+            updateCombat(input, false)
+            if clearT <= 0 && phase == .clear {
+                if wave >= TurretZone64.maxWave && !endless {
+                    finishGame(true)
+                } else {
+                    balls = []
+                    makeCards()
+                    phase = .upgrade
+                }
+            }
+        case .upgrade:
+            if upgradeT > 0 { upgradeT -= 1 }
+            if input.leftPressed {
+                cardSel = (cardSel + 2) % 3
+                play(.select)
+            }
+            if input.rightPressed {
+                cardSel = (cardSel + 1) % 3
+                play(.select)
+            }
+            var tapped = false
+            if input.pointer.pressed && upgradeT <= 0 {
+                for i in 0..<3 {
+                    let x = 14 + i * 100
+                    if input.pointer.x >= x - 4 && input.pointer.x < x + 96 && input.pointer.y >= 62 && input.pointer.y < 228 {
+                        cardSel = i
+                        tapped = true
+                    }
+                }
+            }
+            if ((input.aPressed || input.startPressed) && upgradeT <= 0) || tapped {
+                applyUpgrade(cards[cardSel])
+                play(.powerup)
+                phase = .playing
+                startWave(wave + 1)
+            }
+        case .over:
+            overTimer += 1
+            if overTimer > 45 {
+                if input.startPressed {
+                    play(.confirm)
+                    beginGame()
+                } else if input.aPressed || input.pointer.pressed {
                     play(.confirm)
                     if victory && !endless {
                         endless = true
@@ -2019,7 +2765,7 @@ final class TurretZone64: Game {
             for k in 0..<n {
                 let a: Float = Float(k) * TurretZone64.twoPi / Float(n)
                 let x = 160 + Int(cos(a) * Float(r))
-                let y = ey + Int(sin(a) * Float(r) * 0.8)
+                let y = TurretZone64.eyeY + Int(sin(a) * Float(r) * 0.8)
                 b.fillRect(x - 3, y - 3, 6, 6, c2)
             }
         }
@@ -2171,6 +2917,15 @@ final class TurretZone64: Game {
         b.text("D" + String(dmgLv + 1) + " R" + String(rateLv + 1) + " C" + String(chargeLv + 1), 140, 276,
                TurretZone64.rgb(190, 176, 240), scale: 1)
         b.text("SEL=RADAR", 250, 276, TurretZone64.rgb(170, 150, 230), scale: 1)
+        let bx = 284
+        let by = 222
+        fillDisc(b, bx, by, 30, TurretZone64.cBlack)
+        fillDisc(b, bx, by, 27, ready ? TurretZone64.cYellow : TurretZone64.rgb(80, 74, 130))
+        fillDisc(b, bx, by + 3, 15, TurretZone64.rgb(40, 36, 70))
+        b.fillRect(bx - 1, by - 15, 3, 6, TurretZone64.cOrange)
+        b.fillRect(bx + 1, by - 18, 5, 3, ready ? TurretZone64.cRed : TurretZone64.cWhite)
+        b.text(ready ? "GO" : String(Int(bomb)), bx - b.textWidth(ready ? "GO" : String(Int(bomb)), scale: 1) / 2, by + 20,
+               ready ? TurretZone64.cBlack : TurretZone64.cWhite, scale: 1)
         let dirTxt = lockKind > 0 ? "LOCK" : "SEEK"
         b.text(dirTxt, 250, 259, lockKind > 0 ? TurretZone64.cRed : TurretZone64.cWhite, scale: 2)
     }

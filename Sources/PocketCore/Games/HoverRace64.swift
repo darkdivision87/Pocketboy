@@ -979,7 +979,7 @@ final class HoverRace64: Game {
         var c = crafts[0]
         let tr = HoverRace64.track
         let airborne: Bool = c.z > 0.01
-        let dirIn: Float = Float(input.dx)
+        let dirIn: Float = steerAxis(input)
         let airbrake: Bool = input.b && input.dx != 0 && !airborne
         let boosting: Bool = input.a && input.b && input.dx == 0 && boostMeter > 0
         airbrakeNow = airbrake
@@ -1253,7 +1253,53 @@ final class HoverRace64: Game {
         }
     }
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchSteer: Float = 0
+    private var touchBoost = 0
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchSteer = 0
+        if touch.began { e.pressed.insert(.a) }
+        if touch.tapped { touchBoost = 40 }
+        var braking = false
+        if touch.down {
+            if touch.y >= 230 {
+                braking = true
+                touchBoost = 0
+                e.held.insert(.b)
+                e.held.remove(.a)
+            } else {
+                e.held.insert(.a)
+            }
+            let ox: Float = Float(touch.x - 160)
+            if ox > 12 {
+                touchSteer = min(1, (ox - 12) / 100)
+            } else if ox < -12 {
+                touchSteer = max(-1, (ox + 12) / 100)
+            }
+        }
+        if touchBoost > 0 {
+            touchBoost -= 1
+            if !braking {
+                e.held.insert(.a)
+                e.held.insert(.b)
+            }
+        }
+        return e
+    }
+
+    private func steerAxis(_ input: InputState) -> Float {
+        if touchSteer != 0 { return touchSteer }
+        return Float(input.dx)
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frame += 1
         if msgTimer > 0 { msgTimer -= 1 }
         if crafts.count < 4 { setupRace() }
@@ -1273,7 +1319,7 @@ final class HoverRace64: Game {
             if input.a { aHeld += 1 } else { aHeld = 0 }
             cdTimer -= 1
             if cdTimer == 180 || cdTimer == 120 || cdTimer == 60 { play(.countdown) }
-            lean += (Float(input.dx) - lean) * 0.2
+            lean += (steerAxis(input) - lean) * 0.2
             updateCamera()
             if cdTimer <= 0 { goRace() }
         case .racing:

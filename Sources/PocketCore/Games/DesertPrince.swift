@@ -146,6 +146,10 @@ final class DesertPrince: Game {
     private var rng = Rng()
 
     override var score: Int { return points }
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchZone = 0
+    private var touchCareful = false
 
     override func start() {
         playMusic(Tunes.desert)
@@ -254,7 +258,65 @@ final class DesertPrince: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    private func canClimbUpHere(_ col: Int, _ row: Int) -> Bool {
+        if cell(col, row) == "X" { return true }
+        if row <= 0 { return false }
+        if floorAt(col, row - 1) || isWall(col, row - 1) { return false }
+        for d in [1, -1] {
+            let tc: Int = col + d
+            if floorAt(tc, row - 1) && !isWall(tc, row - 1) { return true }
+        }
+        return false
+    }
+
+    private func applyTouch(_ input: inout InputState) {
+        if mode != .play {
+            if touch.tapped { input.pressed.insert(.a) }
+            touchZone = 0
+            touchCareful = false
+            return
+        }
+        let roomX: Int = max(0, colOf(hx)) / DesertPrince.roomCols
+        let roomY: Int = max(0, rowOf(hy)) / DesertPrince.roomRows
+        let sx: Int = Int(hx) - roomX * 160
+        let sy: Int = Int(hy) - 10 - roomY * 132
+        let fdx: Int = touch.x - sx
+        let fdy: Int = touch.y - sy
+        if touch.tapped && abs(fdx) <= 16 && abs(fdy) <= 24 { input.pressed.insert(.a) }
+        if !touch.down {
+            touchZone = 0
+            touchCareful = false
+            return
+        }
+        if fdx > 10 { input.held.insert(.right) }
+        else if fdx < -10 { input.held.insert(.left) }
+        var zone = 0
+        if fdy < -24 { zone = 1 }
+        else if fdy > 16 { zone = 2 }
+        if zone == 1 {
+            if abs(fdx) <= 10 && canClimbUpHere(colOf(hx), rowOf(hy)) {
+                input.held.insert(.up)
+                input.pressed.insert(.up)
+            } else {
+                input.held.insert(.a)
+                if touchZone != 1 { input.pressed.insert(.a) }
+            }
+        } else if zone == 2 {
+            input.held.insert(.down)
+            input.pressed.insert(.down)
+        }
+        touchZone = zone
+        if touch.longPressed {
+            touchCareful = true
+            input.pressed.insert(.b)
+        }
+        if touchCareful { input.held.insert(.b) }
+    }
+
+    override func update(_ rawInput: InputState) {
+        touch.update(rawInput.pointer)
+        var input = rawInput
+        applyTouch(&input)
         tick += 1
         switch mode {
         case .title:

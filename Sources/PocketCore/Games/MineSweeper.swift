@@ -88,6 +88,9 @@ final class MineSweeper: Game {
     private var loseDone = false
     private var tick = 0
     private var rng = Rng()
+    private var touch = TouchGesture()
+
+    override var wantsPointer: Bool { return true }
 
     override var score: Int {
         return revealedSafe * 10 + winBonus
@@ -274,9 +277,12 @@ final class MineSweeper: Game {
 
     override func update(_ input: InputState) {
         tick = (tick + 1) % 1_000_000
+        touch.update(input.pointer)
         switch mode {
         case .title:
-            if input.aPressed || input.startPressed {
+            if touch.tapped && touch.y >= 80 && touch.y < 94 {
+                cycleDifficulty()
+            } else if input.aPressed || input.startPressed || touch.tapped {
                 newBoard()
                 play(.confirm)
             }
@@ -289,7 +295,10 @@ final class MineSweeper: Game {
             if input.selectPressed {
                 cycleDifficulty()
                 newBoard()
-            } else if (input.aPressed || input.startPressed) && winTimer > 30 {
+            } else if faceTapped() {
+                newBoard()
+                play(.select)
+            } else if (input.aPressed || input.startPressed || touch.tapped) && winTimer > 30 {
                 newBoard()
                 play(.confirm)
             }
@@ -306,11 +315,26 @@ final class MineSweeper: Game {
             if input.selectPressed {
                 cycleDifficulty()
                 newBoard()
-            } else if (input.aPressed || input.startPressed) && (loseDone || loseTimer > 90) {
+            } else if faceTapped() {
+                newBoard()
+                play(.select)
+            } else if (input.aPressed || input.startPressed || touch.tapped) && (loseDone || loseTimer > 90) {
                 newBoard()
                 play(.confirm)
             }
         }
+    }
+
+    private func faceTapped() -> Bool {
+        return touch.tapped && touch.y < 18 && abs(touch.x - 80) <= 14
+    }
+
+    private func boardCell(_ px: Int, _ py: Int) -> Int {
+        if px < x0 || py < y0 { return -1 }
+        let bx = (px - x0) / 8
+        let by = (py - y0) / 8
+        if !inBounds(bx, by) { return -1 }
+        return by * cols + bx
     }
 
     private func cycleDifficulty() {
@@ -352,9 +376,24 @@ final class MineSweeper: Game {
             play(.select)
             return
         }
+        var doA = input.aPressed
+        var doB = input.bPressed
+        if touch.tapped || touch.longPressed {
+            if faceTapped() {
+                newBoard()
+                play(.select)
+                return
+            }
+            let ti = boardCell(touch.x, touch.y)
+            if ti >= 0 {
+                cx = ti % cols
+                cy = ti / cols
+                if touch.tapped { doA = true } else { doB = true }
+            }
+        }
         let idx = cy * cols + cx
         if idx < 0 || idx >= state.count { return }
-        if input.bPressed {
+        if doB {
             if state[idx] == 0 {
                 state[idx] = 2
                 flagsCount += 1
@@ -365,7 +404,7 @@ final class MineSweeper: Game {
                 play(.blip)
             }
         }
-        if input.aPressed {
+        if doA {
             if state[idx] == 1 {
                 chord(cx, cy)
             } else if state[idx] == 0 {

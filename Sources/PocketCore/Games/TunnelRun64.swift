@@ -411,7 +411,37 @@ final class TunnelRun64: Game {
         sparks.removeAll(where: { $0.life <= 0 })
     }
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchSteer: Float = 0
+    private var touchBoost = 0
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        var e = input
+        touchSteer = 0
+        if touch.began { e.pressed.insert(.a) }
+        if touch.tapped { touchBoost = 25 }
+        if touch.down {
+            if touch.y >= 245 { e.held.insert(.b) }
+            let ox: Float = Float(touch.x - 160)
+            if ox > 12 {
+                touchSteer = min(1, (ox - 12) / 100)
+            } else if ox < -12 {
+                touchSteer = max(-1, (ox + 12) / 100)
+            }
+        }
+        if touchBoost > 0 {
+            touchBoost -= 1
+            if !e.b { e.held.insert(.a) }
+        }
+        return e
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         tick += 1
         if shake > 0 { shake -= 1 }
         if flashT > 0 { flashT -= 1 }
@@ -467,7 +497,8 @@ final class TunnelRun64: Game {
     }
 
     private func steerShip(_ input: InputState) {
-        let target: Float = Float(input.dx) * 0.55
+        let axis: Float = (touchSteer != 0) ? touchSteer : Float(input.dx)
+        let target: Float = axis * 0.55
         steerV += (target - steerV) * 0.3
         shipPos -= steerV
         while shipPos >= 32 { shipPos -= 32 }

@@ -288,7 +288,45 @@ final class StarWing64: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    // MARK: - Touch
+
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchAim = false
+    private var touchTX: Float = 0
+    private var touchTY: Float = 0
+    private var touchFrames = 0
+    private var lastTapFrame = -1000
+
+    private func touchAdjusted(_ input: InputState) -> InputState {
+        touch.update(input.pointer)
+        touchFrames += 1
+        var e = input
+        touchAim = false
+        if touch.began { e.pressed.insert(.a) }
+        if touch.tapped {
+            if touchFrames - lastTapFrame <= 20 {
+                e.pressed.insert(.b)
+                lastTapFrame = -1000
+            } else {
+                lastTapFrame = touchFrames
+            }
+        }
+        if touch.down {
+            touchAim = true
+            e.held.insert(.a)
+            let fx: Float = Float(touch.x - 160) / 160.0
+            let fy: Float = Float(touch.y - 30) / 230.0
+            let cx: Float = StarWing64.cf(fx, -1, 1)
+            let cy: Float = StarWing64.cf(fy, 0, 1)
+            touchTX = cx * StarWing64.xLim
+            touchTY = StarWing64.yMax - cy * (StarWing64.yMax - StarWing64.yMin)
+        }
+        return e
+    }
+
+    override func update(_ rawInput: InputState) {
+        let input: InputState = touchAdjusted(rawInput)
         frameN += 1
         shx = sin(Float(frameN) * 2.3) * Float(shake) * 0.6
         shy = cos(Float(frameN) * 1.9) * Float(shake) * 0.6
@@ -340,8 +378,12 @@ final class StarWing64: Game {
         advanceWorld()
 
         // steering
-        let tvx: Float = Float(input.dx) * 3.6
-        let tvy: Float = Float(-input.dy) * 3.0
+        var tvx: Float = Float(input.dx) * 3.6
+        var tvy: Float = Float(-input.dy) * 3.0
+        if touchAim {
+            tvx = StarWing64.cf((touchTX - px) * 0.2, -5, 5)
+            tvy = StarWing64.cf((touchTY - py) * 0.2, -4, 4)
+        }
         pvx += (tvx - pvx) * 0.22
         pvy += (tvy - pvy) * 0.22
         if rollT > 0 { px += rollDir * 2.2 }

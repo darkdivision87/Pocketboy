@@ -79,6 +79,11 @@ final class BlockDrop: Game {
     private var paused = false
     private var clearRows: [Int] = []
     private var clearTimer = 0
+    private var touch = TouchGesture()
+    private var grabbed = false
+    private var grabOffset = 0
+
+    override var wantsPointer: Bool { return true }
 
     override var score: Int { return points }
 
@@ -126,6 +131,7 @@ final class BlockDrop: Game {
         lockTimer = 0
         lockResets = 0
         dasTimer = 0
+        grabbed = false
         if collides(curType, curRot, curX, curY) {
             phase = .over
             play(.death)
@@ -266,15 +272,16 @@ final class BlockDrop: Game {
 
     override func update(_ input: InputState) {
         tick += 1
+        touch.update(input.pointer)
         switch phase {
         case .title:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 phase = .play
                 newGame()
             }
         case .over:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 phase = .play
                 newGame()
@@ -288,13 +295,13 @@ final class BlockDrop: Game {
     }
 
     private func updatePlay(_ input: InputState) {
-        if input.startPressed {
+        if input.startPressed || (paused && touch.tapped) {
             paused = !paused
             play(.pause)
         }
         if paused { return }
 
-        if input.aPressed { tryRotate(1) }
+        if input.aPressed || touch.tapped { tryRotate(1) }
         if input.bPressed { tryRotate(-1) }
 
         let dir = input.dx
@@ -310,7 +317,20 @@ final class BlockDrop: Game {
             if dasTimer >= 12 && (dasTimer - 12) % 4 == 0 { tryMove(dir) }
         }
 
-        if input.upPressed {
+        if touch.down {
+            let fingerCol: Int = clamp((touch.x - wellX) / 8, 0, cols - 1)
+            if !grabbed {
+                grabbed = true
+                grabOffset = clamp(fingerCol - curX, 0, 3)
+            }
+            let wantX: Int = fingerCol - grabOffset
+            if wantX < curX { tryMove(-1) } else if wantX > curX { tryMove(1) }
+        } else {
+            grabbed = false
+        }
+        let softDown: Bool = input.down || (touch.down && touch.y >= 112)
+
+        if input.upPressed || touch.swipe == 2 {
             var dropped = 0
             var guardCount = 0
             while !collides(curType, curRot, curX, curY + 1) && guardCount < 40 {
@@ -325,7 +345,7 @@ final class BlockDrop: Game {
 
         let grounded = collides(curType, curRot, curX, curY + 1)
         if grounded {
-            lockTimer += input.down ? 6 : 1
+            lockTimer += softDown ? 6 : 1
             if lockTimer >= 30 {
                 lockPiece()
                 return
@@ -333,11 +353,11 @@ final class BlockDrop: Game {
         } else {
             gravCounter += 1
             var interval = gravityInterval()
-            if input.down { interval = min(interval, 2) }
+            if softDown { interval = min(interval, 2) }
             if gravCounter >= interval {
                 gravCounter = 0
                 curY += 1
-                if input.down { points += 1 }
+                if softDown { points += 1 }
             }
         }
     }

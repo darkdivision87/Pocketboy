@@ -158,6 +158,9 @@ final class TurboLane: Game {
     private var overTimer = 0
     private var readyTimer = 0
 
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+
     override var score: Int {
         let v = clamp(scoreF, 0, 99_999_999)
         return max(0, Int(v))
@@ -283,7 +286,17 @@ final class TurboLane: Game {
 
     // MARK: Update
 
-    override func update(_ input: InputState) {
+    override func update(_ rawInput: InputState) {
+        touch.update(rawInput.pointer)
+        var input = rawInput
+        if touch.tapped { input.pressed.insert(.a) }
+        if touch.down && mode == .play {
+            input.held.insert(.a)
+            if touch.y >= 115 { input.held.insert(.b) }
+            let gap: Float = Float(touch.x) - px
+            if gap > 3 { input.held.insert(.right) }
+            else if gap < -3 { input.held.insert(.left) }
+        }
         frame += 1
         switch mode {
         case .title:

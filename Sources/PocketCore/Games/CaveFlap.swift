@@ -86,6 +86,9 @@ final class CaveFlap: Game {
     private var overDelay = 0
     private var tick = 0
     private var rng = Rng()
+    private var touch = TouchGesture()
+
+    override var wantsPointer: Bool { return true }
 
     override var score: Int { return passedCount + coins * 2 }
 
@@ -167,16 +170,17 @@ final class CaveFlap: Game {
 
     override func update(_ input: InputState) {
         tick = (tick + 1) % 1_000_000
+        touch.update(input.pointer)
         switch mode {
         case .title:
             scroll += 0.6
             birdY = 66 + sin(Float(tick) * 0.08) * 4
             if (tick / 10) % 2 == 0 { flapTimer = 6 } else { flapTimer = 0 }
-            if input.aPressed || input.upPressed || input.startPressed { begin() }
+            if input.aPressed || input.upPressed || input.startPressed || touch.tapped { begin() }
         case .playing:
             updatePlaying(input)
         case .paused:
-            if input.startPressed {
+            if input.startPressed || touch.tapped {
                 mode = .playing
                 play(.pause)
             }
@@ -185,7 +189,7 @@ final class CaveFlap: Game {
         case .over:
             if overDelay > 0 {
                 overDelay -= 1
-            } else if input.aPressed || input.startPressed {
+            } else if input.aPressed || input.startPressed || touch.tapped {
                 begin()
             }
         }
@@ -198,7 +202,7 @@ final class CaveFlap: Game {
             return
         }
         if flapTimer > 0 { flapTimer -= 1 }
-        if input.aPressed || input.upPressed {
+        if input.aPressed || input.upPressed || touch.began {
             vy = -2.7
             flapTimer = 8
             play(.bounce)

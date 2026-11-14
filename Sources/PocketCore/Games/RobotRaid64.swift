@@ -917,6 +917,23 @@ final class RobotRaid64: Game {
     private var fogB = 232
 
     override var score: Int { return max(0, scoreValue) }
+    override var wantsPointer: Bool { return true }
+
+    // touch state
+    private var tpDown = false
+    private var tpFrames = 0
+    private var tpStartX = 0
+    private var tpStartY = 0
+    private var tpLastX = 0
+    private var tpLastY = 0
+    private var tpMoved = 0
+    private var tpLastTap = -100
+    private var touchTurn: Float = 0
+    private var touchWalk = false
+    private var touchHold = false
+    private var touchDash = false
+    private var touchTap = false
+    private var tapFireT = 0
 
     override init() {
         let zb = UnsafeMutablePointer<Float>.allocate(capacity: 320)
@@ -1362,8 +1379,9 @@ final class RobotRaid64: Game {
     private func updatePlayer(_ input: InputState) {
         if input.dx != 0 { turnHold = min(30, turnHold + 1) } else { turnHold = 0 }
         let ts: Float = 0.030 + 0.022 * Float(min(turnHold, 20)) / 20.0
-        ang = RobotRaid64.wrapAngle(ang + Float(input.dx) * ts)
-        let fwd: Float = -Float(input.dy)
+        ang = RobotRaid64.wrapAngle(ang + Float(input.dx) * ts + touchTurn)
+        var fwd: Float = -Float(input.dy)
+        if touchWalk && input.dy == 0 { fwd = 1 }
         let fx: Float = cos(ang)
         let fy: Float = sin(ang)
         let acc: Float = fwd > 0 ? 0.0125 : 0.009
@@ -1372,7 +1390,7 @@ final class RobotRaid64: Game {
         vx *= 0.86
         vy *= 0.86
         if dashCD > 0 { dashCD -= 1 }
-        if input.bPressed && dashCD <= 0 && phase != .over { startDash(input) }
+        if (input.bPressed || touchDash) && dashCD <= 0 && phase != .over { startDash(input) }
         if dashT > 0 {
             dashT -= 1
             let q = tryMove(px, py, dashVX, dashVY, 0.25)
@@ -1404,7 +1422,7 @@ final class RobotRaid64: Game {
         if recoil > 0 { recoil -= 1 }
         if muzzle > 0 { muzzle -= 1 }
         if fireCD > 0 { fireCD -= 1 }
-        let firing = input.a && phase == .playing
+        let firing = (input.a || touchHold || tapFireT > 0) && phase == .playing
         if firing { ammo += 0.15 } else { ammo += 0.55 }
         if ammo > 100 { ammo = 100 }
         if ammoLock && ammo >= 25 { ammoLock = false }
@@ -1706,8 +1724,48 @@ final class RobotRaid64: Game {
         updatePickups()
     }
 
+    private func processTouch(_ input: InputState) {
+        touchTurn = 0
+        touchWalk = false
+        touchHold = false
+        touchDash = false
+        touchTap = false
+        let ptr = input.pointer
+        if tapFireT > 0 { tapFireT -= 1 }
+        if ptr.pressed {
+            tpDown = true
+            tpFrames = 0
+            tpMoved = 0
+            tpStartX = ptr.x
+            tpStartY = ptr.y
+            tpLastX = ptr.x
+            tpLastY = ptr.y
+            if frame - tpLastTap <= 18 { touchDash = true }
+        }
+        if ptr.down && tpDown {
+            tpFrames += 1
+            let dx = ptr.x - tpLastX
+            tpLastX = ptr.x
+            tpLastY = ptr.y
+            tpMoved = abs(ptr.x - tpStartX) + abs(ptr.y - tpStartY)
+            touchTurn = Float(clamp(dx, -40, 40)) * 0.011
+            if ptr.y > 192 && tpFrames > 6 { touchWalk = true }
+            if tpFrames > 18 && tpMoved < 14 && ptr.y <= 192 { touchHold = true }
+        }
+        if ptr.released && tpDown {
+            tpDown = false
+            if tpFrames <= 15 && tpMoved < 14 {
+                touchTap = true
+                tapFireT = 6
+                tpLastTap = frame
+            }
+        }
+        if !ptr.down && !ptr.released { tpDown = false }
+    }
+
     override func update(_ input: InputState) {
         frame += 1
+        processTouch(input)
         updateFx()
         if input.selectPressed { showMap = !showMap }
         switch phase {
@@ -1721,7 +1779,7 @@ final class RobotRaid64: Game {
                 titleMap -= 1
                 play(.select)
             }
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || input.pointer.pressed {
                 play(.confirm)
                 beginGame()
             }
@@ -1765,7 +1823,7 @@ final class RobotRaid64: Game {
             }
         case .over:
             overTimer += 1
-            if overTimer > 45 && (input.aPressed || input.startPressed) {
+            if overTimer > 45 && (input.aPressed || input.startPressed || input.pointer.pressed) {
                 play(.confirm)
                 beginGame()
             }
@@ -2127,6 +2185,7 @@ final class RobotRaid64: Game {
         let shielded = shieldT > 0 && phase != .title
         let cpx = camPX
         let cpy = camPY
+        let showZone = phase == .playing && hintT > 480
         b.withPixels { p, w, h in
             if w < 320 || h < 288 { return }
             self.renderBackdrop(p, w, h, cpx, cpy, dirX, dirY)
@@ -2135,6 +2194,13 @@ final class RobotRaid64: Game {
             if flash > 0 { self.tint(p, w, h, 255, 40, 50, flash) }
             if pflash > 0 { self.tint(p, w, h, 255, 255, 190, pflash) }
             if shielded { self.tint(p, w, h, 90, 170, 255, 36) }
+            if showZone {
+                for y in 192..<252 {
+                    for x in 0..<320 {
+                        p[y * w + x] = RobotRaid64.tintTo(p[y * w + x], 46, 255, 255, 255)
+                    }
+                }
+            }
         }
         if phase != .title {
             drawPops(b)
@@ -2310,6 +2376,10 @@ final class RobotRaid64: Game {
             bar(b, 80, 46, 160, 7, r.hp / r.maxHp, RobotRaid64.cOrange)
         }
         if showMap { drawMinimap(b) }
+        if phase == .playing && hintT > 480 {
+            ctext(b, "HOLD HERE TO WALK", 214, RobotRaid64.cWhite, 1)
+            ctext(b, "DRAG TO TURN - TAP TO SHOOT - 2 TAPS DASH", 198, RobotRaid64.cYellow, 1)
+        }
         // hints
         if hintT > 0 && waveBanner < 40 && phase == .playing {
             let idx = ((720 - hintT) / 180) % 4
