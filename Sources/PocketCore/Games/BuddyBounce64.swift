@@ -583,6 +583,10 @@ final class BuddyBounce64: Game {
             menu = (menu == 0) ? 1 : 0
         }
         if menu != 0 {
+            if input.bPressed {
+                menu = 0
+                return
+            }
             updateMenu()
             updateSparks()
             updateFloats()

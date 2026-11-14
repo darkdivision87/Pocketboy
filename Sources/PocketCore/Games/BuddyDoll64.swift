@@ -227,6 +227,7 @@ extension BuddyBounce64 {
         let hl = rotPt(hx, hy, ca, sa, -3.5, -5)
         c.ellipse(hl.0, hl.1, 6, 4, skinL, 110)
         c.stitchRing(hx, hy, hr * 0.86, seam, 30)
+        c.weave = false
         // head patch
         let pp = rotPt(hx, hy, ca, sa, 7.2, -6.4)
         c.disc(pp.0, pp.1, 3.4, brgb(88, 140, 214))
