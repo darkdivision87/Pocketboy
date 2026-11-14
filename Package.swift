@@ -14,14 +14,12 @@ let wipFiles: [String] = [
     "Games/LanternCore.swift",
     "Games/BuddyToys64.swift",
     "Games/BuddyBounce64.swift",
-    "Games/TycoonDraw.swift",
     "Games/LanternEnemies.swift",
     "Games/BuddyDraw64.swift",
     "Games/LanternAudio.swift",
     "Games/LanternSave.swift",
     "Games/LanternArt.swift",
     "Games/LanternWorld.swift",
-    "Games/TycoonData.swift",
     "Games/TycoonTown64.swift"
 ]
 

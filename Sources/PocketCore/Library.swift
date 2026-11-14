@@ -38,6 +38,7 @@ public enum Library {
         .turboFox64,
         .railRunner64,
         .fluffwood64,
+        .tycoonTown64,
         .pocketPong
     ]
 
