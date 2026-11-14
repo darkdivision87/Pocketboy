@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PocketBoy iPad">
+<meta name="theme-color" content="#0d0f16">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>PocketBoy iPad Edition</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="ipad.css">
+</head>
+<body class="ipad" data-assets="../">
+<div id="loading"><div class="logo">POCKETBOY</div><div class="ipadtag">iPAD EDITION</div><div id="loadmsg">Loading games...</div></div>
+
+<main id="shelf" hidden>
+  <header>
+    <h1>PocketBoy <span class="ipadtag">iPAD EDITION</span></h1>
+    <button id="shelfSettings" class="icon-btn" aria-label="Settings">&#9881;</button>
+  </header>
+  <div class="chips" id="chips"></div>
+  <div id="grid"></div>
+  <p class="foot" id="count"></p>
+  <p class="foot"><a href="../" style="color:inherit">On an iPhone? Open the iPhone version</a></p>
+</main>
+
+<section id="detail" hidden>
+  <div class="sheet">
+    <button id="detailClose" class="icon-btn close" aria-label="Close">&times;</button>
+    <div id="detailCart"></div>
+    <p class="era" id="detailEra"></p>
+    <p id="detailBlurb"></p>
+    <h3>How to play on iPad</h3>
+    <p id="detailControls"></p>
+    <p class="note">Touch: drag the left side to move, tap anywhere for A, press and hold for B. Racing games keep the gas on while you touch.</p>
+    <button id="playBtn" class="primary">PLAY</button>
+  </div>
+</section>
+
+<section id="console" hidden>
+  <div class="screen-wrap"><canvas id="screen" width="160" height="144"></canvas><div id="lcdgrid"></div></div>
+  <div id="touchlayer"></div>
+  <div id="stickui" hidden><i class="ring"></i><i class="knob"></i></div>
+  <div id="hint"></div>
+  <div class="dpad" id="dpad" style="display:none"><i class="u"></i><i class="d"></i><i class="l"></i><i class="r"></i></div>
+  <div class="ab"><div class="round b" data-btn="32">B</div><div class="round a" data-btn="16">A</div></div>
+  <div class="topbar">
+    <div class="pills"><div class="pill" data-btn="128">SELECT</div><div class="pill" data-btn="64">START</div></div>
+    <span class="brand">POCKETBOY iPAD</span>
+    <button id="menuBtn" class="chip">&#9776; MENU</button>
+  </div>
+</section>
+
+<section id="menu" hidden>
+  <div class="sheet">
+    <h2 id="menuTitle"></h2>
+    <p id="menuBest"></p>
+    <button id="resumeBtn" class="primary">RESUME</button>
+    <h3>Touch controls for this game</h3>
+    <div class="seg" id="segScheme"><button data-v="stick">Joystick</button><button data-v="swipe">Swipe</button><button data-v="touch" hidden>Touch</button></div>
+    <label class="row"><span>Auto-accelerate while touching</span><input type="checkbox" id="optAutoGas"></label>
+    <button id="restartBtn">RESTART</button>
+    <button id="settingsBtn">SETTINGS</button>
+    <button id="ejectBtn">BACK TO GAMES</button>
+  </div>
+</section>
+
+<section id="settings" hidden>
+  <div class="sheet">
+    <button id="settingsClose" class="icon-btn close" aria-label="Close">&times;</button>
+    <h2>Settings</h2>
+    <h3>Color depth</h3>
+    <div class="seg" id="segColor"><button data-v="1">Color 15-bit</button><button data-v="0">Classic 2-bit</button></div>
+    <div id="tintRow"><h3>LCD tint</h3><div class="seg wrap" id="segTint"></div></div>
+    <label class="row"><span>LCD pixel grid</span><input type="checkbox" id="optGrid"></label>
+    <label class="row"><span>Sound</span><input type="checkbox" id="optSound"></label>
+    <h3>iPad controls</h3>
+    <label class="row"><span>Left-handed layout</span><input type="checkbox" id="optLefty"></label>
+    <h3>Button size</h3>
+    <div class="seg" id="segSize"><button data-v="0.85">Small</button><button data-v="1">Medium</button><button data-v="1.25">Large</button></div>
+    <h3>Button opacity</h3>
+    <div class="seg" id="segOp"><button data-v="0.5">Faint</button><button data-v="0.8">Normal</button><button data-v="1">Solid</button></div>
+    <h3>Background color</h3>
+    <div class="swatches" id="swatches"></div>
+    <p class="note">Drag on the left of the screen to move, tap anywhere to act, press and hold for the B action. Racing games keep the gas on while you touch. In the menu you can switch any game between Joystick and Swipe.</p>
+  </div>
+</section>
+
+<div id="error" hidden></div>
+<script type="module" src="../app.js"></script>
+<script src="ipad.js" defer></script>
+</body>
+</html>
