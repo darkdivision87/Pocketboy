@@ -15,15 +15,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Network first: always pick up the newest game when online, and fall back to the saved copy when offline.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  if (new URL(event.request.url).origin !== location.origin) return;
   event.respondWith(
-    caches.match(event.request).then((hit) => hit || fetch(event.request).then((resp) => {
-      if (resp && resp.ok && new URL(event.request.url).origin === location.origin) {
+    fetch(event.request).then((resp) => {
+      if (resp && resp.ok) {
         const copy = resp.clone();
         caches.open(CACHE).then((cache) => cache.put(event.request, copy));
       }
       return resp;
-    }))
+    }).catch(() => caches.match(event.request))
   );
 });

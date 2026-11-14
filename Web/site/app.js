@@ -306,9 +306,28 @@ function showError(err) {
   $('#loading').hidden = true;
 }
 
+// If an old saved copy of the app ever gets out of sync with the site, clear it once and start fresh.
+async function healAndReload() {
+  try {
+    if (sessionStorage.getItem('pb.healed')) return false;
+    sessionStorage.setItem('pb.healed', '1');
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    location.reload();
+    return true;
+  } catch (e) { return false; }
+}
+
 async function boot() {
   try {
     const resp = await fetch(ASSET + 'pocketweb.wasm');
+    if (!resp.ok && await healAndReload()) return;
     if (!resp.ok) throw new Error('could not load pocketweb.wasm (' + resp.status + ')');
     engine = await loadEngine(await resp.arrayBuffer());
     engine.ex.pb_init(44100);
