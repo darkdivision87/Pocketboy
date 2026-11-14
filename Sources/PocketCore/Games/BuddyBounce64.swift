@@ -337,6 +337,7 @@ final class BuddyBounce64: Game {
     var slotT: Int = 0
     var slotPos: [Float] = [0, 0, 0]
     var slotTarget: [Int] = [0, 0, 0]
+    var slotGoal: [Float] = [0, 0, 0]
     var slotStop: [Int] = [60, 80, 100]
     var slotStopped: [Bool] = [false, false, false]
     var slotMsg: String = ""
@@ -361,6 +362,18 @@ final class BuddyBounce64: Game {
 
     override var score: Int { return max(0, stars * 100 + cash) }
     override var wantsPointer: Bool { return true }
+
+    override func drawTrueColor(_ b: TrueColorBuffer) {
+        renderFrame(b)
+    }
+
+    override func exportSave() -> [UInt8] {
+        return buildSave()
+    }
+
+    override func importSave(_ bytes: [UInt8]) {
+        loadSave(bytes)
+    }
 
     override func start() {
         playMusic(Tunes.arcade)

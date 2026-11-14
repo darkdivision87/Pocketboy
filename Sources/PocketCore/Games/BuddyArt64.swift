@@ -447,7 +447,7 @@ extension BuddyBounce64 {
 
     func renderRoomDynamic(_ c: BuddyCanvas) {
         let t: Float = Float(frameN)
-        let room: Int = selRoom
+        let room: Int = (phase == 0) ? 0 : selRoom
         switch room {
         case 2:
             var i: Int = 0

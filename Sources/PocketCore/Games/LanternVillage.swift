@@ -76,11 +76,11 @@ enum LanternVillage {
         l.append(npc("bobo", "BOBO", LanternC.brown, LanternC.orange, ["Pots are full of hearts! Smash them when you feel sad. The pots, I mean. Not you."]))
         l.append(npc("wanda", "WANDA", LanternC.grayL, LanternC.purple, ["I lost my glasses! Oh wait, they are on my head. Thank you for listening!"]))
         l.append(npc("biscuit", "BISCUIT THE CAT", LanternC.orange, LanternC.orange, ["MEOW. (That means: you have a very nice lantern, now go catch me a Spark.)"]))
-        l.append(npc("gus", "GUS", LanternC.brown, LanternC.fol1Cloth, ["I chop trees. The trees chop back. Mostly with leaves."]))
+        l.append(npc("gus", "GUS", LanternC.brown, LanternC.tunic, ["I chop trees. The trees chop back. Mostly with leaves."]))
         l.append(npc("dusty", "DUSTY", LanternC.gold, LanternC.red, ["Sand in my shoes, sand in my hat, sand in my sandwich. I love it here!"]))
         l.append(npc("marla", "MARLA", LanternC.grayD, LanternC.orange, ["Cracked walls sound hollow. Tap, tap... boom! Bring a bomb and see what hides inside."]))
         l.append(npc("ripple", "RIPPLE", LanternC.cyan, LanternC.blue, ["The lake is called Mirror Lake because it shows how silly my hat looks."]))
-        l.append(npc("moss", "MOSS", LanternC.lime, LanternC.fol1Cloth, ["This marsh is misty. Or maybe my glasses are fogged. Either way, I cannot see my feet."]))
+        l.append(npc("moss", "MOSS", LanternC.lime, LanternC.tunic, ["This marsh is misty. Or maybe my glasses are fogged. Either way, I cannot see my feet."]))
         l.append(npc("ember", "EMBER", LanternC.red, LanternC.gold, ["It is hot here! I would offer you a marshmallow, but they all got toasted."]))
         return l
     }
