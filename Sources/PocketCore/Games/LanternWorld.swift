@@ -412,7 +412,7 @@ enum LanternValidator {
         let head = String(parts[0])
         let arg: String = parts.count > 1 ? String(parts[1]) : ""
         switch head {
-        case "gems", "bombs", "arrows": return Int(arg) != nil
+        case "gems", "bombs", "arrows", "heal", "spark": return Int(arg) != nil
         case "hp", "key", "bigkey", "map", "piece", "heartc": return true
         case "item": return LanternContent.item(arg) != nil
         case "quest": return LanternContent.quest(arg) != nil
