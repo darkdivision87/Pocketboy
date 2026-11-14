@@ -17,6 +17,8 @@ public class Game {
     public var palette: [UInt16] { return Palette.standard }
     /// Current score, used for the high-score board.
     public var score: Int { return 0 }
+    /// Return true if the game uses `input.pointer` (direct touch). Touch devices then send finger positions to it.
+    public var wantsPointer: Bool { return false }
     /// Called once when the console finishes booting and hands control to the cartridge.
     public func start() {}
     public func update(_ input: InputState) {}

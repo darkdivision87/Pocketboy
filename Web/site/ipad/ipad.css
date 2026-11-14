@@ -59,3 +59,7 @@ body.ipad .round.b { left: 0; bottom: 0; width: 96px; height: 96px; }
 body.lefty.ipad .ab { right: auto; left: calc(var(--sal) + 36px); transform-origin: left bottom; }
 body.ipad.scheme-swipe .ab { opacity: calc(var(--ctl-op) * .5); }
 @media (orientation: landscape) { body.ipad .ab { bottom: calc(var(--sab) + 28px); } }
+
+body.ipad .ripple { position: absolute; z-index: 3; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 4px solid rgba(255,255,255,.85); pointer-events: none; animation: ripple .5s ease-out forwards; }
+@keyframes ripple { from { transform: scale(.4); opacity: 1; } to { transform: scale(3.4); opacity: 0; } }
+body.ipad.scheme-touch .ab { opacity: calc(var(--ctl-op) * .35); }

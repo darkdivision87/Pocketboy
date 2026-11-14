@@ -39,6 +39,16 @@ function setHeld(group, value) {
 const currentButtons = () => held.dpad | held.buttons | held.keys | held.pad | held.ext;
 // Lets the iPad touch layer (ipad/ipad.js) feed the same input pipeline.
 window.pb = { setExt: (bits) => setHeld('ext', bits), get current() { return current; }, get menuOpen() { return menuOpen; } };
+const toGame = (e) => {
+  const r = canvas.getBoundingClientRect();
+  const w = engine.ex.pb_width(), h = engine.ex.pb_height();
+  const x = Math.max(0, Math.min(w - 1, Math.floor((e.clientX - r.left) / r.width * w)));
+  const y = Math.max(0, Math.min(h - 1, Math.floor((e.clientY - r.top) / r.height * h)));
+  return { x, y };
+};
+window.pb.pointer = (e, down) => { if (!engine || !current) return; const p = toGame(e); engine.ex.pb_pointer(p.x, p.y, down ? 1 : 0); };
+window.pb.pointerUp = () => { if (engine) engine.ex.pb_pointer(-1, -1, 0); };
+Object.defineProperty(window.pb, 'wantsPointer', { get() { return !!(engine && current && engine.ex.pb_wants_pointer()); } });
 const announce = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
 function bindControls() {
@@ -324,6 +334,22 @@ async function boot() {
 }
 
 function bindUi() {
+  // Direct touch on the game screen (the iPhone page; the iPad page has its own full-screen touch layer).
+  const surface = document.getElementById('touchlayer') ? null : document.querySelector('.screen-wrap');
+  if (surface) {
+    let pid = null;
+    surface.addEventListener('pointerdown', (e) => {
+      if (!window.pb.wantsPointer || menuOpen || pid !== null) return;
+      pid = e.pointerId;
+      try { surface.setPointerCapture(pid); } catch (err) { /* ignore */ }
+      window.pb.pointer(e, true);
+      e.preventDefault();
+    });
+    surface.addEventListener('pointermove', (e) => { if (e.pointerId === pid) window.pb.pointer(e, true); });
+    const end = (e) => { if (e.pointerId === pid) { window.pb.pointer(e, false); pid = null; } };
+    surface.addEventListener('pointerup', end);
+    surface.addEventListener('pointercancel', end);
+  }
   const banner = document.getElementById('ipadBanner');
   if (banner && !(window.innerWidth >= 700 && navigator.maxTouchPoints > 1)) banner.hidden = true;
   $('#playBtn').addEventListener('click', () => { if (detailCart) play(detailCart); });

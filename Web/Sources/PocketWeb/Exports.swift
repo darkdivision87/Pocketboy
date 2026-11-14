@@ -184,3 +184,13 @@ public func pb_save_pop() {
 
 @_expose(wasm, "pb_flush_save") @_cdecl("pb_flush_save")
 public func pb_flush_save() { pbConsole.flushSave() }
+
+// MARK: Direct touch
+
+@_expose(wasm, "pb_pointer") @_cdecl("pb_pointer")
+public func pb_pointer(_ x: Int32, _ y: Int32, _ down: Int32) {
+    pbConsole.setPointer(x: Int(x), y: Int(y), down: down != 0)
+}
+
+@_expose(wasm, "pb_wants_pointer") @_cdecl("pb_wants_pointer")
+public func pb_wants_pointer() -> Int32 { return pbConsole.wantsPointer ? 1 : 0 }

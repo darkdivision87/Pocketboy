@@ -21,11 +21,23 @@ public struct Buttons: OptionSet, Hashable {
     public static let select = Buttons(rawValue: 1 << 7)
 }
 
+/// Direct touch. Coordinates are in the game's own pixels (0..159 x 0..143 for pixel carts, 0..319 x 0..287 for 64 carts).
+/// A game receives pointer input only if it returns true from `wantsPointer`.
+public struct PointerState {
+    public var x: Int = -1
+    public var y: Int = -1
+    public var down: Bool = false
+    public var pressed: Bool = false
+    public var released: Bool = false
+    public init() {}
+}
+
 /// Per-frame input handed to a game. `pressed` is only set on the first frame a button goes down.
 public struct InputState {
     public var held: Buttons = []
     public var pressed: Buttons = []
     public var released: Buttons = []
+    public var pointer = PointerState()
 
     public init() {}
 
@@ -33,6 +45,16 @@ public struct InputState {
         pressed = new.subtracting(held)
         released = held.subtracting(new)
         held = new
+    }
+
+    public mutating func advancePointer(x: Int, y: Int, down: Bool) {
+        pointer.pressed = down && !pointer.down
+        pointer.released = !down && pointer.down
+        pointer.down = down
+        if x >= 0 && y >= 0 {
+            pointer.x = x
+            pointer.y = y
+        }
     }
 
     public var left: Bool { held.contains(.left) }

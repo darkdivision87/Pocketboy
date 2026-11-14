@@ -40,9 +40,14 @@
   applyUi();
 
   // ---------- per-game control profile ----------
+  const wantsTouch = () => !!(window.pb && window.pb.wantsPointer);
   function profileFor(id) {
     const p = profiles[id] || {};
-    return { scheme: p.scheme || (SWIPE.has(id) ? 'swipe' : 'stick'), gas: p.gas !== undefined ? !!p.gas : GAS.has(id) };
+    const wants = wantsTouch();
+    let sch = p.scheme;
+    if (sch === 'touch' && !wants) sch = null;
+    if (!sch) sch = wants ? 'touch' : (SWIPE.has(id) ? 'swipe' : 'stick');
+    return { scheme: sch, gas: p.gas !== undefined ? !!p.gas : GAS.has(id) };
   }
   function applyProfile() {
     if (!cart) return;
@@ -50,6 +55,9 @@
     scheme = p.scheme;
     autoGas = p.gas;
     body.classList.toggle('scheme-swipe', scheme === 'swipe');
+    body.classList.toggle('scheme-touch', scheme === 'touch');
+    const touchBtn = document.querySelector('#segScheme button[data-v="touch"]');
+    if (touchBtn) touchBtn.hidden = !wantsTouch();
     document.querySelectorAll('#segScheme button').forEach((b) => b.classList.toggle('on', b.dataset.v === scheme));
     document.getElementById('optAutoGas').checked = autoGas;
   }
@@ -98,6 +106,8 @@
     knob.style.top = (y - r.top + dy * k) + 'px';
   }
   function clearAll() {
+    if (touchPointer !== null && window.pb && window.pb.pointerUp) window.pb.pointerUp();
+    touchPointer = null;
     for (const g of gestures.values()) clearTimeout(g.longTimer);
     gestures.clear();
     stick = null;
@@ -106,9 +116,29 @@
     refresh();
   }
 
+  let touchPointer = null;
+  function ripple(e) {
+    const r = layer.getBoundingClientRect();
+    const d = document.createElement('i');
+    d.className = 'ripple';
+    d.style.left = (e.clientX - r.left) + 'px';
+    d.style.top = (e.clientY - r.top) + 'px';
+    layer.parentNode.appendChild(d);
+    setTimeout(() => d.remove(), 500);
+  }
+
   layer.addEventListener('pointerdown', (e) => {
     if (!cart || (window.pb && window.pb.menuOpen)) return;
     try { layer.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    if (scheme === 'touch') {
+      if (touchPointer === null) {
+        touchPointer = e.pointerId;
+        window.pb.pointer(e, true);
+        ripple(e);
+      }
+      e.preventDefault();
+      return;
+    }
     const r = layer.getBoundingClientRect();
     const onLeftSide = (e.clientX - r.left) < r.width * 0.5;
     const stickSide = ui.lefty ? !onLeftSide : onLeftSide;
@@ -128,6 +158,7 @@
   });
 
   layer.addEventListener('pointermove', (e) => {
+    if (scheme === 'touch') { if (e.pointerId === touchPointer) window.pb.pointer(e, true); return; }
     const g = gestures.get(e.pointerId);
     if (!g) return;
     const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
@@ -145,6 +176,7 @@
   });
 
   function endGesture(e) {
+    if (e.pointerId === touchPointer) { window.pb.pointer(e, false); touchPointer = null; return; }
     const g = gestures.get(e.pointerId);
     if (!g) return;
     clearTimeout(g.longTimer);
@@ -166,9 +198,11 @@
     try { n = Number(localStorage.getItem('pb.ipad.hints') || 0); } catch (e) { /* ignore */ }
     if (n >= 8) return;
     try { localStorage.setItem('pb.ipad.hints', String(n + 1)); } catch (e) { /* ignore */ }
-    hint.textContent = scheme === 'swipe'
-      ? 'Swipe to move  |  Tap = A  |  Hold = B'
-      : 'Drag the left side to move  |  Tap = A  |  Hold = B';
+    hint.textContent = scheme === 'touch'
+      ? 'Touch the screen to play: tap to shoot or pick, drag to move'
+      : scheme === 'swipe'
+        ? 'Swipe to move  |  Tap = A  |  Hold = B'
+        : 'Drag the left side to move  |  Tap = A  |  Hold = B';
     hint.classList.add('show');
     setTimeout(() => hint.classList.remove('show'), 5500);
   }

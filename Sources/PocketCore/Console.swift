@@ -37,6 +37,10 @@ public final class Console {
     private let truecolor = TrueColorBuffer()
     private var input = InputState()
     private var accumulator: Double = 0
+    private var pointerX = -1
+    private var pointerY = -1
+    private var pointerDown = false
+    private var pointerLatch = false
     private var scoresDirty = false
     private static let stepLength = 1.0 / 60.0
 
@@ -57,6 +61,8 @@ public final class Console {
         bootCounter = 0
         isBooting = true
         input = InputState()
+        pointerDown = false
+        pointerLatch = false
         accumulator = 0
         score = 0
         frameCount = 0
@@ -78,6 +84,17 @@ public final class Console {
         isBooting = false
     }
 
+    /// True if the running cartridge (not the boot logo) uses direct touch input.
+    public var wantsPointer: Bool { return boot == nil && (game?.wantsPointer ?? false) }
+
+    /// Direct touch position in the cartridge's pixel coordinates. Call on every touch event.
+    public func setPointer(x: Int, y: Int, down: Bool) {
+        pointerX = x
+        pointerY = y
+        if down && !pointerDown { pointerLatch = true }
+        pointerDown = down
+    }
+
     /// Advances emulation by `dt` seconds of wall time using a fixed 60 Hz step.
     public func tick(dt: Double, buttons: Buttons) {
         accumulator += min(max(dt, 0), 0.1)
@@ -94,6 +111,8 @@ public final class Console {
     /// One 60 Hz frame (also used by tests).
     public func step(buttons: Buttons) {
         input.advance(to: buttons)
+        input.advancePointer(x: pointerX, y: pointerY, down: pointerDown || pointerLatch)
+        pointerLatch = false
         frameCount += 1
         if let b = boot {
             b.update(input)
