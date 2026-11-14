@@ -137,6 +137,9 @@ final class BrickSmash: Game {
     private var points = 0
     private var paused = false
     private var phaseTimer = 0
+    private var touch = TouchGesture()
+
+    override var wantsPointer: Bool { return true }
 
     override var score: Int { return points }
 
@@ -201,9 +204,10 @@ final class BrickSmash: Game {
 
     override func update(_ input: InputState) {
         tick += 1
+        touch.update(input.pointer)
         switch phase {
         case .title:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 startGame()
             }
@@ -213,7 +217,7 @@ final class BrickSmash: Game {
                 balls[0].x = padX
                 balls[0].y = padY - 3
             }
-            if input.aPressed && !balls.isEmpty {
+            if (input.aPressed || touch.began) && !balls.isEmpty {
                 var b = balls[0]
                 var dir = Float(input.dx)
                 if input.dx == 0 { dir = rng.chance(50) ? 0.35 : -0.35 }
@@ -225,7 +229,7 @@ final class BrickSmash: Game {
                 play(.blip)
             }
         case .play:
-            if input.startPressed {
+            if input.startPressed || (paused && touch.tapped) {
                 paused = !paused
                 play(.pause)
             }
@@ -257,20 +261,20 @@ final class BrickSmash: Game {
             }
         case .levelDone:
             phaseTimer -= 1
-            if phaseTimer <= 0 || input.aPressed {
+            if phaseTimer <= 0 || input.aPressed || touch.tapped {
                 level += 1
                 loadLevel()
                 resetBall()
                 phase = .ready
             }
         case .over:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 startGame()
             }
         case .win:
             if phaseTimer > 0 { phaseTimer -= 1 }
-            if (input.aPressed || input.startPressed) && phaseTimer <= 60 {
+            if (input.aPressed || input.startPressed || touch.tapped) && phaseTimer <= 60 {
                 level += 1
                 loadLevel()
                 resetBall()
@@ -284,6 +288,10 @@ final class BrickSmash: Game {
     private func movePaddle(_ input: InputState) {
         let sp: Float = input.b ? 4.4 : 3.0
         padX += Float(input.dx) * sp
+        if touch.down {
+            let goal: Float = Float(touch.x)
+            padX += (goal - padX) * 0.4
+        }
         if wideTimer > 0 { wideTimer -= 1 }
         if slowTimer > 0 { slowTimer -= 1 }
         let target: Float = wideTimer > 0 ? 40 : 26

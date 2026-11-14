@@ -534,7 +534,9 @@ final class SkySlide64: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    override func update(_ inputRaw: InputState) {
+        var input = inputRaw
+        readPointer(&input)
         tick += 1
         if shake > 0 { shake -= 1 }
         if flashT > 0 { flashT -= 1 }
@@ -568,7 +570,7 @@ final class SkySlide64: Game {
                 play(.powerup)
                 hintT = 280
             }
-            let dx: Float = Float(input.dx)
+            let dx: Float = slideAxis(input)
             steerV += (dx * 2.6 - steerV) * 0.25
             pos = wrapPos(pos + steerV)
         case .slide:
@@ -600,8 +602,75 @@ final class SkySlide64: Game {
                 round += 1
                 play(.confirm)
                 beginRound()
+            } else if phaseT > 60 && input.aPressed {
+                resetAll()
+                play(.select)
             }
         }
+    }
+
+
+    // MARK: - Pointer (touch) input
+
+    override var wantsPointer: Bool { return true }
+
+    private var ptDown = false
+    private var ptX = 160
+    private var ptY = 144
+    private var ptTap = false
+    private var ptT = 0
+    private var ptSX = 0
+    private var ptSY = 0
+    private var ptPressed = false
+    private var tapBoostT = 0
+    private var ptIgnore = false
+
+    private func readPointer(_ input: inout InputState) {
+        let p: PointerState = input.pointer
+        ptTap = false
+        ptPressed = p.pressed
+        ptDown = p.down && !ptIgnore
+        if p.x >= 0 && p.y >= 0 {
+            ptX = max(0, min(319, p.x))
+            ptY = max(0, min(287, p.y))
+        }
+        if p.pressed {
+            ptT = 0
+            ptSX = ptX
+            ptSY = ptY
+            ptIgnore = false
+        }
+        if p.down { ptT += 1 }
+        if p.released {
+            let moved: Int = abs(ptX - ptSX) + abs(ptY - ptSY)
+            if ptT <= 16 && moved < 24 { ptTap = true }
+            ptIgnore = false
+        }
+        if !p.down { ptDown = false }
+        if tapBoostT > 0 { tapBoostT -= 1 }
+        if tapSpinT > 0 { tapSpinT -= 1 }
+        if p.pressed {
+            if phase == .title || phase == .summary || phase == .results {
+                if phase == .summary && round > 5 && ptY < 24 {
+                    input.pressed.insert(.start)
+                } else {
+                    input.pressed.insert(.a)
+                }
+            }
+        }
+        if ptTap && phase == .slide { tapBoostT = 50 }
+    }
+
+    private func slideAxis(_ inp: InputState) -> Float {
+        if !ptDown { return Float(inp.dx) }
+        var fxp: Float = Float(ptX - 160)
+        let fyp: Float = Float(ptY - 144)
+        if abs(fxp) < 14 && abs(fyp) < 14 { fxp = 0 }
+        if fxp == 0 && abs(fyp) < 14 { return Float(inp.dx) }
+        let target: Float = wrapPos(atan2(fyp, fxp) / (2 * Float.pi) * 256)
+        let diff: Float = angDiff(target, pos)
+        if abs(diff) < 3 { return 0 }
+        return max(-1, min(1, diff / 18))
     }
 
     private func updateSway() {
@@ -625,12 +694,12 @@ final class SkySlide64: Game {
     private func updateSlide(_ inp: InputState) {
         phaseT += 1
         let rr: Float = Float(min(round, 8))
-        let dx: Float = Float(inp.dx)
+        let dx: Float = slideAxis(inp)
         steerV += (dx * 2.7 - steerV) * 0.25
         pos = wrapPos(pos + steerV)
 
         // assists: magnet toward the next pickup, nudge away from the next bump when not steering
-        if inp.dx == 0 {
+        if dx == 0 && !ptDown {
             var assist: Float = 0.05
             if round <= 2 { assist = 0.08 }
             for it in items {
@@ -652,7 +721,7 @@ final class SkySlide64: Game {
         let carryBonus: Float = Float(carryMult - 10) / 10 * 0.9
         let baseSpeed: Float = 8 + rr * 0.55
         var target: Float = baseSpeed + carryBonus
-        if inp.a && meter > 1 {
+        if (inp.a || tapBoostT > 0) && meter > 1 {
             boosting = true
             meter -= 0.55
             target += 5
@@ -867,21 +936,30 @@ final class SkySlide64: Game {
         // steering with a gentle auto-steer toward the pool when the D-pad is idle
         let fwdX: Float = cos(psi)
         let fwdY: Float = sin(psi)
-        var turn: Float = Float(inp.dx) * 0.024
-        if inp.dx == 0 {
+        var axisX: Float = Float(inp.dx)
+        var axisY: Float = Float(inp.dy) * -1.0
+        var touchDive = false
+        if ptDown {
+            axisX = max(-1, min(1, Float(ptX - 160) / 70))
+            axisY = max(-1, min(1, Float(144 - ptY) / 80))
+            if ptY > 192 { touchDive = true }
+            if abs(axisX) < 0.12 { axisX = 0 }
+        }
+        var turn: Float = axisX * 0.024
+        if axisX == 0 && !ptDown {
             let bearing: Float = atan2(poolY - fy, poolX - fx)
             var diff: Float = bearing - psi
             diff = diff - 2 * Float.pi * floor((diff + Float.pi) / (2 * Float.pi))
             turn = max(-0.012, min(0.012, diff * 0.05))
         }
         psi += turn
-        let targetBank: Float = Float(inp.dx) * 1.0
+        let targetBank: Float = axisX
         bank += (targetBank - bank) * 0.12
 
         // pitch
-        let tp: Float = Float(inp.dy) * -1.0
+        let tp: Float = axisY
         pitch += (tp - pitch) * 0.14
-        diveOn = inp.b
+        diveOn = inp.b || touchDive
         var dAlt: Float = -0.3
         var spMul: Float = 1
         if pitch >= 0 {
@@ -895,7 +973,7 @@ final class SkySlide64: Game {
             dAlt -= 0.55
             spMul += 0.35
         }
-        if inp.aPressed && stamina >= 22 {
+        if (inp.aPressed || ptTap) && stamina >= 22 {
             stamina -= 22
             vy += 2.0
             flapT = 18
@@ -1745,13 +1823,13 @@ final class SkySlide64: Game {
             ctext(b, "DODGE THE BEACH BALLS", 232, SkySlide64.cPink, 1)
         case .slide:
             if hintT > 0 {
-                ctext(b, "STEER AROUND THE TUBE - HOLD A TO BOOST", 252, SkySlide64.cWhite, 1)
+                ctext(b, "TOUCH TO STEER - TAP OR HOLD A TO BOOST", 252, SkySlide64.cWhite, 1)
             }
         case .fly:
             if hintT > 0 {
                 panel(b, 20, 236, 280, 40)
-                ctext(b, "UP DOWN PITCH  LEFT RIGHT BANK", 243, SkySlide64.cWhite, 1)
-                ctext(b, "A FLAP  B DIVE  LAND IN THE BULLSEYE", 255, SkySlide64.cYellow, 1)
+                ctext(b, "TOUCH OR D-PAD STEER  HIGH CLIMBS LOW DIVES", 243, SkySlide64.cWhite, 1)
+                ctext(b, "TAP OR A FLAP  LOW TOUCH OR B DIVE", 255, SkySlide64.cYellow, 1)
                 ctext(b, "FLY THROUGH RINGS AND POP BALLOONS", 265, SkySlide64.cPink, 1)
             }
         case .splash:
@@ -1814,7 +1892,7 @@ final class SkySlide64: Game {
         ctext(b, "SCORE " + String(totalScore), 202, SkySlide64.cWhite, 2)
         if phaseT > 40 && (tick / 30) % 2 == 0 {
             ctext(b, "A NEXT SLIDE", 226, SkySlide64.cCyan, 1)
-            if round > 5 { ctext(b, "START FINISH", 238, SkySlide64.cWhite, 1) }
+            if round > 5 { ctext(b, "START OR TAP TOP FINISH", 238, SkySlide64.cWhite, 1) }
         }
     }
 
@@ -1838,7 +1916,7 @@ final class SkySlide64: Game {
         ctext(b, "LAST LANDING " + fmtMult(landMult), 200, SkySlide64.cYellow, 1)
         if phaseT > 60 && (tick / 30) % 2 == 0 {
             if round == 5 {
-                ctext(b, "A ENDLESS MODE", 222, SkySlide64.cGreen, 1)
+                ctext(b, "A OR TAP ENDLESS MODE", 222, SkySlide64.cGreen, 1)
             }
             ctext(b, "START PLAY AGAIN", 236, SkySlide64.cWhite, 1)
         }

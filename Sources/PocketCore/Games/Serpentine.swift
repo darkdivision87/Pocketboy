@@ -89,6 +89,8 @@ final class Serpentine: Game {
     private var rng = Rng()
 
     override var score: Int { return points }
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
 
     override func start() {
         playMusic(Tunes.desert)
@@ -220,7 +222,15 @@ final class Serpentine: Game {
 
     // MARK: Update
 
-    override func update(_ input: InputState) {
+    override func update(_ rawInput: InputState) {
+        touch.update(rawInput.pointer)
+        var input = rawInput
+        if touch.tapped { input.pressed.insert(.a) }
+        if mode == .paused && touch.tapped { input.pressed.insert(.start) }
+        if touch.swipe == 1 { input.pressed.insert(.up) }
+        else if touch.swipe == 2 { input.pressed.insert(.down) }
+        else if touch.swipe == 4 { input.pressed.insert(.left) }
+        else if touch.swipe == 8 { input.pressed.insert(.right) }
         tick = (tick + 1) % 1_000_000
         switch mode {
         case .title:

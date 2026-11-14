@@ -31,6 +31,9 @@ final class PocketPong: Game {
     private var serveDelay = 60
     private var rng = Rng()
     private let paddleH: Float = 24
+    private var touch = TouchGesture()
+
+    override var wantsPointer: Bool { return true }
 
     override var score: Int { return playerScore * 100 }
 
@@ -46,7 +49,14 @@ final class PocketPong: Game {
 
     override func update(_ input: InputState) {
         let speed: Float = 2.2
+        touch.update(input.pointer)
         playerY = clamp(playerY + Float(input.dy) * speed, 8, 144 - 8 - paddleH)
+        if touch.down {
+            let goal: Float = clamp(Float(touch.y) - paddleH / 2, 8, 144 - 8 - paddleH)
+            playerY += (goal - playerY) * 0.35
+            playerY = clamp(playerY, 8, 144 - 8 - paddleH)
+        }
+        if touch.tapped && serveDelay > 0 { serveDelay = 1 }
         // Simple CPU: follow the ball with a speed limit.
         let target = ballY - paddleH / 2
         if cpuY < target - 2 { cpuY += 1.3 } else if cpuY > target + 2 { cpuY -= 1.3 }
