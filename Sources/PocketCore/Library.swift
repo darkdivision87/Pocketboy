@@ -31,6 +31,8 @@ public enum Library {
         .hoverRace64,
         .skyGlider64,
         .snowSlalom64,
+        .skySlide64,
+        .jetSki64,
         .pocketPong
     ]
 

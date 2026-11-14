@@ -304,8 +304,9 @@ final class JetSki64: Game {
                     }
                 }
                 // start/finish line across the channel at waypoint 0 (angle 0)
-                if ad < hw && th < 0.012 * 250 / max(rc, 1) * 1.0 + 0.0 && wy > -1 && wy < 14 && wx > 0 {
-                    id = ((tx >> 1) + (ty >> 1)) & 1 == 0 ? 7 : 8
+                if ad < hw && th < 6 / max(rc, 1) && wx > 0 {
+                    let chk: Int = ((tx >> 1) + (ty >> 1)) & 1
+                    id = chk == 0 ? 7 : 8
                 }
                 m[ty * 512 + tx] = UInt8(id)
             }
@@ -453,7 +454,10 @@ final class JetSki64: Game {
                 let sg: Float = side == 0 ? 1 : -1
                 let off: Float = hw + 24 + Float(r.int(34))
                 let jitter: Float = Float(r.int(24)) - 12
-                addObj(JetSki64.kPalm, px + nx * sg * off + dirX[k] * jitter, py + ny * sg * off + dirY[k] * jitter, r.int(3))
+                let palmX: Float = px + nx * sg * off + dirX[k] * jitter
+                let palmY: Float = py + ny * sg * off + dirY[k] * jitter
+                let pv: Int = r.int(3)
+                addObj(JetSki64.kPalm, palmX, palmY, pv)
             }
         }
         // boost buoys, ramps, wave bumps
@@ -855,7 +859,7 @@ final class JetSki64: Game {
         }
         let landed: Bool = stepRacer(0, steer, top, brake, boosting)
         if landed { onPlayerLanded() }
-        if pr.z <= 1.5 { racers[0].spin = 0 }
+        if racers[0].z <= 1.5 { racers[0].spin = 0 }
         for i in 1..<4 {
             let rb: Float = rubber(i)
             driveAI(i, racers[i].top * rb)
