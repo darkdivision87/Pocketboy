@@ -43,6 +43,8 @@ final class LanternQuest: Game {
     var getTitle = ""
     var getLines: [String] = []
     var getTimer = 0
+    var getAfterLines: [String] = []
+    var getAfterSpeaker = ""
     var curTune = ""
     var shake = 0
     var palCache: [String: [UInt16]] = [:]

@@ -39,8 +39,8 @@ import Glibc
 //     npc <npcId> x y                        a villager (registry: LanternContent.npcs)
 //     sign x y <textId>                      readable sign (put an 'e' tile there; texts: LanternContent.texts)
 //     board x y                              quest board ('e' tile) listing side quests
-//     warp x y <area> <gx> <gy> <tx> <ty>    stepping on tile x,y moves the hero to tile tx,ty of that area/room. The target tile
-//                                            must be walkable, and the target room must hold a warp back to this room.
+//     warp x y <area> <gx> <gy> <tx> <ty> [oneway]   stepping on tile x,y moves the hero to tile tx,ty of that area/room. The target tile
+//                                            must be walkable, and the target room must hold a warp (or the dungeon's gate) back, unless `oneway` is given.
 //     gate x y <N>                           overworld entrance of dungeon N ('D' tile at x,y, the only approach is tile x,y+1).
 //                                            A guard blocks tile x,y+1 until dungeon N is registered AND you own enough sparks
 //                                            (LanternDungeon.sparksNeeded). Unregistered dungeons show a friendly "the way opens
@@ -530,10 +530,13 @@ enum LanternValidator {
             guard let target = LanternContent.area(ta) else { out.append(tag + " warp to missing area"); return }
             guard let tr = target.room(e.i(4), e.i(5)) else { out.append(tag + " warp to missing room"); return }
             if !walkable(tr, e.i(6), e.i(7)) { out.append(tag + " warp landing blocked") }
-            var back = false
+            var back = e.s(8) == "oneway"
             for line in tr.ents {
-                if let w = LanternEnt(line), w.kind == "warp", w.count >= 8 {
-                    if w.i(3) == a.num && w.i(4) == r.gx && w.i(5) == r.gy { back = true }
+                if let w = LanternEnt(line) {
+                    if w.kind == "warp" && w.count >= 8 {
+                        if w.i(3) == a.num && w.i(4) == r.gx && w.i(5) == r.gy { back = true }
+                    }
+                    if w.kind == "gate" && a.dungeonNum > 0 && w.i(3) == a.dungeonNum { back = true }
                 }
             }
             if !back { out.append(tag + " warp has no way back") }

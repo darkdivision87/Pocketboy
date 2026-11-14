@@ -623,7 +623,12 @@ extension LanternQuest {
             lines = n.npc.lines
         }
         if lines.isEmpty { lines = ["..."] }
-        if mode == .play { say(n.npc.name, lines) }
+        if mode == .play {
+            say(n.npc.name, lines)
+        } else if mode == .getItem {
+            getAfterSpeaker = n.npc.name
+            getAfterLines = lines
+        }
     }
 
     func boardTalk() {
