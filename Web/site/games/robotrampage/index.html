@@ -151,7 +151,8 @@ svg{display:block}
 .card{flex:1;min-width:0;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.3);border-radius:26px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .card.eq{border-color:var(--green);background:rgba(91,227,125,.18)}
 .card.locked .gi{filter:grayscale(.9) brightness(.7)}
-.card .gi{width:100%;height:clamp(60px,13vmin,110px)}
+.card .gi{width:100%;height:clamp(60px,13vmin,110px);display:flex;justify-content:center}
+.card .gi svg{height:100%;width:auto;max-width:100%}
 .card h3{margin:0;font-size:clamp(18px,3vmin,26px)}
 .card .d{font-size:clamp(13px,2vmin,17px);color:#d9c9ff;min-height:2.4em}
 .stat{width:100%;display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.9vmin,16px)}
