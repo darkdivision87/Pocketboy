@@ -1,7 +1,7 @@
 // Procedural art for Robot Smash Lab: robot part sprites (cached offscreen canvases), skins and arena backgrounds.
 export const R = 2; // sprite resolution (pixels per world unit)
 export const PART = {
-  head: { w: 44, h: 38 }, torso: { w: 54, h: 60 }, arm: { w: 16, h: 32 }, fore: { w: 18, h: 32 }, thigh: { w: 18, h: 34 }, shin: { w: 20, h: 34 },
+  head: { w: 44, h: 38 }, torso: { w: 54, h: 60 }, arm: { w: 16, h: 32 }, fore: { w: 18, h: 38 }, thigh: { w: 18, h: 34 }, shin: { w: 20, h: 40 },
 };
 
 export const SKINS = {
@@ -124,18 +124,18 @@ function sprites(pal, skin) {
   const sleeve = skin === 'chef' ? '#ffffff' : (skin === 'pirate' ? '#f4efe2' : pal.body);
   o.arm = mk(30, 46, (g) => { cyl(g, 15, 32, sleeve, pal.dark, 7); bolt(g, 0, -11, 2, pal.accent); });
   o.fore = mk(36, 64, (g) => {
-    cyl(g, 16, 30, shade(pal.body, 0), pal.dark, 7);
-    const hg = g.createRadialGradient(-3, 15, 1, 0, 18, 12); hg.addColorStop(0, shade(pal.accent, .4)); hg.addColorStop(1, pal.accent);
-    g.fillStyle = hg; g.strokeStyle = pal.dark; g.lineWidth = 2; g.beginPath(); g.arc(0, 18, 10.5, 0, 6.3); g.fill(); g.stroke();
-    g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(0, 20); g.lineTo(0, 27); g.stroke();
-    g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.arc(-3.5, 14, 2.4, 0, 6.3); g.fill();
+    g.save(); g.translate(0, -6); cyl(g, 16, 26, shade(pal.body, 0), pal.dark, 7); g.restore();
+    const hg = g.createRadialGradient(-3, 6, 1, 0, 9, 12); hg.addColorStop(0, shade(pal.accent, .4)); hg.addColorStop(1, pal.accent);
+    g.fillStyle = hg; g.strokeStyle = pal.dark; g.lineWidth = 2; g.beginPath(); g.arc(0, 9, 10, 0, 6.3); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(0, 11); g.lineTo(0, 17); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.6)'; g.beginPath(); g.arc(-3.5, 5, 2.4, 0, 6.3); g.fill();
   });
   o.thigh = mk(32, 46, (g) => { cyl(g, 17, 34, pal.body, pal.dark, 7); bolt(g, 0, 10, 2, pal.accent); });
   o.shin = mk(44, 60, (g) => {
-    cyl(g, 18, 32, shade(pal.body, -.06), pal.dark, 7);
-    const bg = g.createLinearGradient(0, 8, 0, 25); bg.addColorStop(0, shade(pal.accent, .25)); bg.addColorStop(1, shade(pal.accent, -.2));
-    rr(g, -13, 11, 26, 14, 7); g.fillStyle = bg; g.fill(); g.strokeStyle = pal.dark; g.lineWidth = 2; g.stroke();
-    g.fillStyle = 'rgba(255,255,255,.45)'; rr(g, -9, 13.5, 10, 3, 1.5); g.fill();
+    g.save(); g.translate(0, -6); cyl(g, 18, 28, shade(pal.body, -.06), pal.dark, 7); g.restore();
+    const bg = g.createLinearGradient(0, 6, 0, 20); bg.addColorStop(0, shade(pal.accent, .25)); bg.addColorStop(1, shade(pal.accent, -.2));
+    rr(g, -13, 6, 26, 14, 7); g.fillStyle = bg; g.fill(); g.strokeStyle = pal.dark; g.lineWidth = 2; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.45)'; rr(g, -9, 8.5, 10, 3, 1.5); g.fill();
   });
   return o;
 }

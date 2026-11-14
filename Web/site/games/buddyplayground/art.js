@@ -18,10 +18,10 @@ export function starPath(c, cx, cy, r1, r2, n = 5, rot = -Math.PI / 2) {
   for (let i = 0; i < n * 2; i++) { const r = i % 2 ? r2 : r1, a = rot + i * Math.PI / n; const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r; i ? c.lineTo(x, y) : c.moveTo(x, y); }
   c.closePath();
 }
-function lg(c, x0, y0, x1, y1, a, b) { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
-function rg(c, x, y, r0, r1, a, b) { const g = c.createRadialGradient(x, y, r0, x, y, r1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
-function fillStroke(c, fill, stroke, w = 4) { c.fillStyle = fill; c.fill(); if (stroke) { c.strokeStyle = stroke; c.lineWidth = w; c.lineJoin = 'round'; c.stroke(); } }
-function gloss(c, x, y, rx, ry, rot = -0.5, a = 0.7) { c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = `rgba(255,255,255,${a})`; c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, TAU); c.fill(); c.restore(); }
+export function lg(c, x0, y0, x1, y1, a, b) { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
+export function rg(c, x, y, r0, r1, a, b) { const g = c.createRadialGradient(x, y, r0, x, y, r1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
+export function fillStroke(c, fill, stroke, w = 4) { c.fillStyle = fill; c.fill(); if (stroke) { c.strokeStyle = stroke; c.lineWidth = w; c.lineJoin = 'round'; c.stroke(); } }
+export function gloss(c, x, y, rx, ry, rot = -0.5, a = 0.7) { c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = `rgba(255,255,255,${a})`; c.beginPath(); c.ellipse(0, 0, rx, ry, 0, 0, TAU); c.fill(); c.restore(); }
 
 export function drawBeachBall(c, r, rot = 0) {
   c.save(); c.rotate(rot);
@@ -256,21 +256,21 @@ export const OUTFITS = {
 };
 
 // ---- rooms --------------------------------------------------------------------------------------------
-function rand(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-function cloud(c, x, y, s, a = 0.9) { c.fillStyle = `rgba(255,255,255,${a})`; c.beginPath(); for (const [dx, dy, r] of [[0, 0, 26], [28, -10, 32], [58, 0, 24], [30, 8, 28], [-4, 6, 20]]) { c.moveTo(x + dx * s + r * s, y + dy * s); c.arc(x + dx * s, y + dy * s, r * s, 0, TAU); } c.fill(); }
-function glow(c, x, y, r, col) { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, col.replace(/[\d.]+\)$/, '0)')); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); }
+export function rand(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+export function cloud(c, x, y, s, a = 0.9) { c.fillStyle = `rgba(255,255,255,${a})`; c.beginPath(); for (const [dx, dy, r] of [[0, 0, 26], [28, -10, 32], [58, 0, 24], [30, 8, 28], [-4, 6, 20]]) { c.moveTo(x + dx * s + r * s, y + dy * s); c.arc(x + dx * s, y + dy * s, r * s, 0, TAU); } c.fill(); }
+export function glow(c, x, y, r, col) { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col); g.addColorStop(1, col.replace(/[\d.]+\)$/, '0)')); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); }
 
-export const ROOMS = [['playroom', 'Playroom', 0], ['beach', 'Sunny Beach', 100], ['snow', 'Snow Land', 180], ['space', 'Moon Base', 260]];
+export const ROOMS = [['box', 'Box Room', 0], ['kitchen', 'Kitchen', 900], ['jungle', 'Jungle', 1500], ['beach', 'Sunny Beach', 2200], ['snow', 'Snow Land', 3000], ['space', 'Moon Base', 4000], ['candy', 'Candy Land', 5000], ['haunted', 'Haunted House', 6500]];
 
 export function drawRoom(c, room, W, H, floorY) {
   const R = rand(room.length * 977 + 13);
   const fy = floorY - 24; // visual floor edge (feet stand a little way into the floor)
-  const fn = ROOM_DRAW[room] || ROOM_DRAW.playroom; fn(c, W, H, fy, R);
+  const fn = ROOM_DRAW[room] || ROOM_DRAW.box; fn(c, W, H, fy, R);
   // soft vignette
   const v = c.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.35, W / 2, H * 0.5, Math.max(W, H) * 0.8); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(30,10,60,0.22)'); c.fillStyle = v; c.fillRect(0, 0, W, H);
 }
 
-const ROOM_DRAW = {
+export const ROOM_DRAW = {
   playroom(c, W, H, fy, R) {
     c.fillStyle = lg(c, 0, 0, 0, fy, '#ffe8b8', '#ffc9d9'); c.fillRect(0, 0, W, fy);
     c.fillStyle = 'rgba(255,255,255,0.35)'; for (let x = 0; x < W; x += 90) c.fillRect(x, 0, 45, fy);
