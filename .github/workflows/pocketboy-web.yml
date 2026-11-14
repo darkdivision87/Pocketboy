@@ -51,11 +51,14 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p dist
-          cp Web/site/* dist/
+          cp -r Web/site/* dist/
           cp "$(find Web/.build -name PocketWeb.wasm | head -n 1)" dist/pocketweb.wasm
           sed -i "s/const VERSION = 'dev'/const VERSION = '${GITHUB_SHA}'/" dist/sw.js
           touch dist/.nojekyll
           ls -la dist
+
+      - name: Render picture icons for every cartridge
+        run: node Web/test/icons.mjs dist/pocketweb.wasm dist/icons
 
       - name: Play every cartridge in the wasm build (Node)
         run: node Web/test/smoke.mjs dist/pocketweb.wasm

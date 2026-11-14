@@ -29,10 +29,10 @@ h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1px; }
 .cart::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 6px; border-radius: 3px; background: #4a4a50; }
 .cart .meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 10px; font-weight: 700; font-family: ui-monospace, Menlo, monospace; }
 .cart .era { background: rgba(0,0,0,.35); padding: 2px 7px; border-radius: 999px; font-weight: 800; }
-.cart .label { height: 78px; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 6px; }
-.cart .t { font-size: 15px; font-weight: 900; text-shadow: 1px 1px 0 rgba(0,0,0,.6); line-height: 1.1; }
+.cart .label { position: relative; aspect-ratio: 10 / 9; border-radius: 6px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; text-align: center; background-size: cover; background-position: center; background-repeat: no-repeat; image-rendering: pixelated; box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
+.cart .t { display: block; width: 100%; padding: 5px 6px; font-size: 13px; font-weight: 900; line-height: 1.1; background: linear-gradient(transparent, rgba(0,0,0,.78)); text-shadow: 1px 1px 0 rgba(0,0,0,.7); }
 .cart .best { margin-top: 6px; font-size: 10px; color: rgba(255,255,255,.75); font-family: ui-monospace, Menlo, monospace; }
-.cart.large .label { height: 120px; } .cart.large .t { font-size: 24px; }
+.cart.large .t { font-size: 20px; padding: 8px; }
 
 .overlay, #detail, #menu, #settings { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: flex-end; justify-content: center; z-index: 30; }
 #menu { align-items: center; z-index: 40; } #settings { z-index: 45; }
@@ -110,3 +110,6 @@ h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 1px; }
 body.playing { position: fixed; inset: 0; width: 100%; overflow: hidden; }
 #console, #console * , #menu, #menu * { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 #console button, #menu button, .pill, .round, .dpad { touch-action: none; }
+
+.ipadbar[hidden] { display: none !important; }
+.ipadbar { display: block; margin: 4px 0 12px; padding: 10px 14px; border-radius: 12px; background: rgba(184,224,106,.14); border: 1px solid rgba(184,224,106,.4); color: #dff5b0; text-decoration: none; font-size: 13px; line-height: 1.3; }

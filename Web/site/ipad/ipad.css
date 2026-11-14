@@ -1,0 +1,61 @@
+/* PocketBoy iPad Edition: a full-screen, touch-first skin. Scoped to body.ipad; the shared card/sheet styles come from ../style.css. */
+body.ipad { --ctl: 1; --ctl-op: .8; background: #0d0f16; }
+.ipadtag { display: inline-block; vertical-align: middle; margin-left: 10px; padding: 4px 10px; border-radius: 999px; background: #2e64d6; color: #fff; font: 800 12px ui-monospace, Menlo, monospace; letter-spacing: 1px; }
+#loading .ipadtag { margin: 0; }
+
+/* Shelf */
+body.ipad #shelf { max-width: 1500px; margin: 0 auto; display: grid; grid-template-columns: 190px 1fr; grid-template-areas: "head head" "chips grid" "foot foot"; column-gap: 28px; align-content: start; padding: calc(var(--sat) + 18px) calc(var(--sar) + 32px) calc(var(--sab) + 28px) calc(var(--sal) + 32px); }
+body.ipad #shelf header { grid-area: head; padding-bottom: 18px; }
+body.ipad #shelf h1 { font-size: 38px; }
+body.ipad #shelf .chips { grid-area: chips; flex-direction: column; align-self: start; position: sticky; top: calc(var(--sat) + 16px); }
+body.ipad .chips button { flex: none; padding: 16px 0; font-size: 17px; border-radius: 14px; }
+body.ipad #grid { grid-area: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 24px; }
+body.ipad #shelf .foot { grid-area: foot; }
+body.ipad #shelf .ipadbar { display: none; }
+@media (max-width: 760px) {
+  body.ipad #shelf { grid-template-columns: 1fr; grid-template-areas: "head" "chips" "grid" "foot"; }
+  body.ipad #shelf .chips { flex-direction: row; position: static; }
+}
+
+/* Cards: picture icon on top, name under it */
+body.ipad .cart .t { font-size: 17px; }
+body.ipad .cart .meta { font-size: 12px; }
+body.ipad .cart .best { font-size: 12px; }
+
+/* Detail and menus: centred cards instead of bottom sheets */
+body.ipad #detail, body.ipad #settings { align-items: center; }
+body.ipad .sheet { border-radius: 22px; width: min(92%, 560px); padding-bottom: 26px; }
+body.ipad #menu .sheet { width: min(92%, 460px); }
+body.ipad .sheet button:not(.icon-btn):not(.primary) { padding: 17px; font-size: 16px; }
+
+/* Console: the game fills the screen; touch controls float on top */
+body.ipad #console { display: block; padding: 0; background: radial-gradient(ellipse at 50% 35%, var(--shell1) 0%, #12141c 62%, #0a0b10 100%); }
+body.ipad .screen-wrap { position: absolute; left: 50%; transform: translateX(-50%); z-index: 1; border-radius: 14px; overflow: hidden; border: 3px solid rgba(255,255,255,.14); box-shadow: 0 24px 70px rgba(0,0,0,.6); background: #000;
+  --sh: min(calc(100dvh - var(--sat) - var(--sab) - 84px), calc((100vw - 60px) * .9));
+  top: calc(var(--sat) + 64px); height: var(--sh); width: calc(var(--sh) / .9); }
+@media (orientation: portrait) {
+  body.ipad .screen-wrap { --sh: calc((100vw - 36px) * .9); top: calc(var(--sat) + 64px); }
+}
+body.ipad #touchlayer { position: absolute; inset: 0; z-index: 2; touch-action: none; }
+body.ipad #stickui { position: absolute; z-index: 3; pointer-events: none; left: 0; top: 0; }
+body.ipad #stickui .ring { position: absolute; width: 132px; height: 132px; margin: -66px 0 0 -66px; border-radius: 50%; border: 3px solid rgba(255,255,255,.55); background: rgba(255,255,255,.12); }
+body.ipad #stickui .knob { position: absolute; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; background: rgba(255,255,255,.65); box-shadow: 0 3px 8px rgba(0,0,0,.4); }
+body.ipad #hint { position: absolute; z-index: 4; left: 50%; bottom: calc(var(--sab) + 18px); transform: translateX(-50%); padding: 12px 20px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; font: 700 16px ui-monospace, Menlo, monospace; opacity: 0; transition: opacity .4s; pointer-events: none; white-space: nowrap; }
+body.ipad #hint.show { opacity: 1; }
+
+body.ipad .topbar { position: absolute; z-index: 5; left: calc(var(--sal) + 18px); right: calc(var(--sar) + 18px); top: calc(var(--sat) + 10px); width: auto; padding: 0; display: flex; align-items: center; justify-content: space-between; }
+body.ipad .brand { color: rgba(255,255,255,.8); font-size: 16px; letter-spacing: 1px; }
+body.ipad .chip { background: rgba(255,255,255,.16); color: #fff; font-size: 15px; padding: 12px 20px; }
+body.ipad .pills { position: static; display: flex; gap: 10px; transform: none; margin: 0; grid-column: auto; }
+body.ipad .pill { display: flex; align-items: center; justify-content: center; width: 112px; height: 44px; padding: 0; border-radius: 22px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); color: #fff; font-size: 13px; letter-spacing: 1px; }
+body.ipad .pill span { display: none; }
+body.ipad .pill.down { background: rgba(255,255,255,.35); }
+
+/* Big translucent A and B on the right (left-handed mode flips them) */
+body.ipad .ab { position: absolute; z-index: 4; right: calc(var(--sar) + 36px); bottom: calc(var(--sab) + 40px); width: 270px; height: 200px; pointer-events: none; transform: scale(var(--ctl)); transform-origin: right bottom; opacity: var(--ctl-op); }
+body.ipad .round { pointer-events: auto; width: 116px; height: 116px; font-size: 34px; color: rgba(0,0,0,.45); border: 3px solid rgba(255,255,255,.55); }
+body.ipad .round.a { right: 0; top: 0; }
+body.ipad .round.b { left: 0; bottom: 0; width: 96px; height: 96px; }
+body.lefty.ipad .ab { right: auto; left: calc(var(--sal) + 36px); transform-origin: left bottom; }
+body.ipad.scheme-swipe .ab { opacity: calc(var(--ctl-op) * .5); }
+@media (orientation: landscape) { body.ipad .ab { bottom: calc(var(--sab) + 28px); } }

@@ -1,6 +1,7 @@
 import { loadEngine } from './engine.js';
 
 const $ = (sel) => document.querySelector(sel);
+const ASSET = document.body.dataset.assets || '';
 const TINTS = ['Classic Green', 'Pocket Gray', 'Backlit Teal', 'Amber'];
 const SHELLS = {
   classic: { name: 'Dust Gray', c1: '#ccc8be', c2: '#a9a59b', accent: '#9e1f5c', print: '#3a3a8c' },
@@ -27,15 +28,18 @@ let highDirty = 0;
 let saveTick = 0;
 
 // ---------- input ----------
-const held = { dpad: 0, buttons: 0, keys: 0, pad: 0 };
+const held = { dpad: 0, buttons: 0, keys: 0, pad: 0, ext: 0 };
 let latch = 0;
 function setHeld(group, value) {
-  const before = held.dpad | held.buttons | held.keys | held.pad;
+  const before = held.dpad | held.buttons | held.keys | held.pad | held.ext;
   held[group] = value;
-  const after = held.dpad | held.buttons | held.keys | held.pad;
+  const after = held.dpad | held.buttons | held.keys | held.pad | held.ext;
   latch |= after & ~before;
 }
-const currentButtons = () => held.dpad | held.buttons | held.keys | held.pad;
+const currentButtons = () => held.dpad | held.buttons | held.keys | held.pad | held.ext;
+// Lets the iPad touch layer (ipad/ipad.js) feed the same input pipeline.
+window.pb = { setExt: (bits) => setHeld('ext', bits), get current() { return current; }, get menuOpen() { return menuOpen; } };
+const announce = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
 function bindControls() {
   const dpad = $('#dpad');
@@ -154,8 +158,9 @@ function applySettings() {
 
 function cartHtml(c, large) {
   const best = high[c.id] ? String(high[c.id]) : '---';
+  const art = ASSET + 'icons/' + encodeURIComponent(c.id) + '.png';
   return `<div class="cart ${large ? 'large' : ''}"><div class="meta"><span class="era">${c.era}</span><span>${c.genre.toUpperCase()}</span></div>` +
-    `<div class="label" style="background:linear-gradient(${c.top},${c.bottom})"><span class="t">${c.title}</span></div>` +
+    `<div class="label" style="background-image:url('${art}'),linear-gradient(${c.top},${c.bottom})"><span class="t">${c.title}</span></div>` +
     `<div class="best">BEST ${best}</div></div>`;
 }
 
@@ -187,6 +192,7 @@ function openDetail(c) {
 
 function toggleMenu(open) {
   menuOpen = open;
+  announce('pb-menu', open);
   $('#menu').hidden = !open;
   if (open) { $('#menuTitle').textContent = current ? current.title : ''; $('#menuBest').textContent = current ? 'BEST ' + (high[current.id] || 0) : ''; }
   applyMute();
@@ -232,6 +238,7 @@ function play(c) {
   toggleMenu(false);
   applyMute();
   lastRender = -1;
+  announce('pb-play', c);
 }
 
 function eject() {
@@ -239,6 +246,7 @@ function eject() {
   pollSaves();
   saveHigh(true);
   current = null;
+  announce('pb-eject', null);
   toggleMenu(false);
   $('#console').hidden = true;
   document.body.classList.remove('playing');
@@ -290,7 +298,7 @@ function showError(err) {
 
 async function boot() {
   try {
-    const resp = await fetch('pocketweb.wasm');
+    const resp = await fetch(ASSET + 'pocketweb.wasm');
     if (!resp.ok) throw new Error('could not load pocketweb.wasm (' + resp.status + ')');
     engine = await loadEngine(await resp.arrayBuffer());
     engine.ex.pb_init(44100);
@@ -316,6 +324,8 @@ async function boot() {
 }
 
 function bindUi() {
+  const banner = document.getElementById('ipadBanner');
+  if (banner && !(window.innerWidth >= 700 && navigator.maxTouchPoints > 1)) banner.hidden = true;
   $('#playBtn').addEventListener('click', () => { if (detailCart) play(detailCart); });
   $('#detailClose').addEventListener('click', () => { $('#detail').hidden = true; });
   $('#detail').addEventListener('click', (e) => { if (e.target.id === 'detail') $('#detail').hidden = true; });
@@ -352,5 +362,5 @@ boot();
 
 // Offline support: after the first visit the whole game works without a connection.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  window.addEventListener('load', () => { navigator.serviceWorker.register(ASSET + 'sw.js').catch(() => {}); });
 }
