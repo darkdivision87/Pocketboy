@@ -66,6 +66,7 @@ body.touch #stickBase{opacity:.55}
 #emoteWheel button:active{transform:scale(.9)}
 @keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
 body.z-tycoon #stickBase,body.z-tycoon #actBtns,body.z-tycoon #emoteWheel,body.z-title #stickBase{display:none}
+body.ed #stickBase,body.ed #actBtns{display:none!important}
 body.z-race #bEmote,body.z-build #bEmote{display:none}
 body.z-race #bJump{background:radial-gradient(circle at 35% 28%,#c9ffd6,#2fcf6a 70%);box-shadow:0 7px 0 #1b8340,0 12px 24px rgba(0,0,0,.28),inset 0 3px 0 rgba(255,255,255,.6)}
 body:not(.z-hub) #bWard,body:not(.z-hub) #bAch{display:none}
@@ -113,9 +114,9 @@ body:not(.z-hub) #bWard,body:not(.z-hub) #bAch{display:none}
 #edStage{position:absolute;left:0;top:0;bottom:0;right:min(46vw,520px);touch-action:none}
 #edTop{display:flex;align-items:center;justify-content:space-between;gap:10px}
 #edTop h3{margin:0;font-size:clamp(22px,3.4vmin,30px);font-weight:900}
-#edTabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none;touch-action:pan-x}
+#edTabs{display:flex;gap:8px;flex-wrap:wrap;padding:4px 2px 8px}
 #edTabs::-webkit-scrollbar{display:none}
-#edTabs button{flex:none;min-height:52px;padding:0 16px;border-radius:999px;background:#e6e1ff;color:#5a4fa8;font-weight:900;font-size:17px;box-shadow:0 3px 0 #c9c1f3}
+#edTabs button{flex:none;min-height:52px;padding:0 15px;border-radius:999px;background:#e6e1ff;color:#5a4fa8;font-weight:900;font-size:17px;box-shadow:0 3px 0 #c9c1f3}
 #edTabs button.on{background:linear-gradient(#8f74ff,#6a4cff);color:#fff;box-shadow:0 3px 0 #4a31c4}
 #edGrid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;align-content:start;padding:4px 2px 8px;touch-action:pan-y;-webkit-overflow-scrolling:touch}
 .it{position:relative;border-radius:20px;background:#fff;box-shadow:0 4px 0 #dcd7f7,inset 0 0 0 3px #ece8ff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:118px;padding:6px;font-weight:800;font-size:14px;color:#4b4690;transition:transform .08s}
@@ -139,18 +140,23 @@ body:not(.z-hub) #bWard,body:not(.z-hub) #bAch{display:none}
 .shopc.max .buy{background:#ffe9a8;color:#a86500;box-shadow:none}
 #tapBtn{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(150px + var(--sab));width:clamp(120px,22vmin,190px);height:clamp(120px,22vmin,190px);border-radius:50%;font-size:clamp(28px,5vmin,44px);font-weight:900;background:radial-gradient(circle at 35% 28%,#ffe58a,#ff9f1c 70%);box-shadow:0 9px 0 #c4660a,0 16px 30px rgba(0,0,0,.3),inset 0 4px 0 rgba(255,255,255,.6);color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.28);pointer-events:auto}
 #tapBtn:active{transform:translateX(-50%) translateY(7px);box-shadow:0 2px 0 #c4660a}
-.pal{display:flex;gap:8px;align-items:center;justify-content:center;padding:10px calc(10px + var(--sar)) calc(10px + var(--sab)) calc(10px + var(--sal));flex-wrap:wrap}
+.pal{display:flex;gap:8px;align-items:center;justify-content:center;padding:10px calc(150px + var(--sar)) calc(10px + var(--sab)) calc(10px + var(--sal));flex-wrap:wrap}
 .pal .c{width:54px;height:54px;border-radius:16px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2),inset 0 3px 0 rgba(255,255,255,.4),0 4px 0 rgba(0,0,0,.25);transition:transform .08s;pointer-events:auto}
 .pal .c.on{transform:translateY(-8px) scale(1.12);box-shadow:0 0 0 4px #fff,0 8px 14px rgba(0,0,0,.3)}
 .pal .t{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.95);color:var(--ink);display:grid;place-items:center;font-size:28px;box-shadow:0 4px 0 rgba(0,0,0,.2);pointer-events:auto}
 .pal .t.on{background:#ff5c8a;color:#fff}
 .pal .gap{width:10px}
+#hint{position:fixed;left:50%;bottom:calc(175px + var(--sab));transform:translateX(-50%);z-index:7;max-width:min(88vw,560px);padding:14px 26px;border-radius:26px;background:rgba(255,255,255,.96);color:var(--ink);font-weight:900;font-size:clamp(17px,2.8vmin,24px);text-align:center;box-shadow:0 6px 0 rgba(0,0,0,.14),0 14px 28px rgba(0,0,0,.28);pointer-events:none;animation:hintbob 1.8s ease-in-out infinite}
+#hint small{display:block;font-weight:700;opacity:.65;font-size:.72em;margin-top:2px}
+@keyframes hintbob{50%{transform:translateX(-50%) translateY(-6px)}}
 #countdown{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);font-size:clamp(80px,24vmin,220px);font-weight:900;text-shadow:0 8px 0 rgba(0,0,0,.25),0 0 30px rgba(255,200,0,.6);z-index:11;pointer-events:none}
 @media (orientation:portrait){
  #edPanel{left:0;right:0;top:auto;height:56dvh;width:auto;border-radius:34px 34px 0 0;box-shadow:0 -10px 40px rgba(30,20,90,.35)}
  #edStage{right:0;bottom:56dvh}
+ .pal{padding-right:10px;padding-bottom:calc(128px + var(--sab))}
  #actBtns{width:190px;height:170px}#bJump{width:100px;height:100px}#bEmote{right:104px;bottom:54px;width:70px;height:70px}
 }
+@media (max-width:600px){.rbtn{width:46px;height:46px;font-size:23px}#topBtns{gap:8px}.chip{height:44px;font-size:20px;padding:0 12px 0 8px}.chip .i{font-size:28px}#zoneLabel{display:none}#zoneHud{top:calc(64px + var(--sat))}#edTabs button{min-height:42px;font-size:15px;padding:0 12px}#edGrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}.it img{width:68px;height:68px}.it{min-height:100px}#edPanel{height:60dvh}#edStage{bottom:60dvh}.shopc{width:140px}}
 @media (max-height:520px){.rbtn{width:52px;height:52px;font-size:26px}.chip{height:46px;font-size:20px}}
 </style>
 </head>
@@ -173,6 +179,7 @@ body:not(.z-hub) #bWard,body:not(.z-hub) #bAch{display:none}
 <div id="emoteWheel" class="hidden"></div>
 <div id="countdown" class="hidden"></div>
 <div id="banner"></div>
+<div id="hint" class="hidden"></div>
 <div id="editor" class="hidden">
   <div id="edStage"></div>
   <div id="edPanel">

@@ -99,10 +99,11 @@ const G = {
     try { await enterZone(id, opts); } catch (e) { console.error(e); errs.push('enter ' + e + ' ' + (e.stack || '')); G.state = prev; }
     f.classList.remove('on'); input.enabled = G.state === 'play';
   },
+  hint(html, ms = 8000) { const h = $('hint'); clearTimeout(G._ht); if (!html) { h.classList.add('hidden'); return; } h.innerHTML = html; h.classList.remove('hidden'); G._ht = setTimeout(() => h.classList.add('hidden'), ms); },
   shake(a = 0.3) { cam.shake = Math.max(cam.shake || 0, a); },
   openEditor, refreshCoins,
 };
-window.G = G;
+window.G = G; G.rebuildAvatar = rebuildAvatar;
 const ACH = [
   { id: 'first_jump', name: 'Boing!', desc: 'Jump for the first time', reward: 10 }, { id: 'coins50', name: 'Pocket Money', desc: 'Collect 50 park coins', reward: 25 },
   { id: 'fashion', name: 'Fashionista', desc: 'Buy a new item', reward: 20 }, { id: 'friend', name: 'Friendly', desc: 'Wave at a park buddy', reward: 15 },
@@ -121,7 +122,7 @@ async function enterZone(id, opts) {
   const old = G.zone; if (old) { old.exit && old.exit(G); if (P.avatar.root.parent) P.avatar.root.parent.remove(P.avatar.root); }
   let z = G.zones[id]; if (!z) { z = G.zones[id] = FACTORY[id](G); z.id = id; z.init(G); z.fx = new Particles(); z.scene.add(z.fx.points); z.fx.resize(innerHeight, renderer.getPixelRatio()); if (envTex && !z.noEnv) { z.scene.environment = envTex; z.scene.environmentIntensity = 0.35; } }
   G.zone = z; G.scene = z.scene; G.fx = z.fx;
-  document.body.className = document.body.className.replace(/z-\w+/g, '') + ' z-' + id;
+  G.hint(''); document.body.className = document.body.className.replace(/z-\w+/g, '') + ' z-' + id;
   $('zoneLabel').textContent = ZONE_NAMES[id]; G.zoneHud(''); G.bottomBar('');
   $('bJump').innerHTML = id === 'race' ? svg('bolt') + 'BOOST' : svg('jump') + 'JUMP';
   input.hasStick = z.stick !== false;
@@ -181,8 +182,8 @@ function showAchievements() {
 }
 function showPause() {
   const z = G.zone, inHub = z && z.id === 'hub';
-  G.modal(`<h2>Paused</h2><div class="row"><button class="btn green" data-a="resume">${svg('play')} Keep playing</button>${z && z.restart ? `<button class="btn blue" data-a="restart">Restart</button>` : ''}<button class="btn pink" data-a="mute">${S.muted ? 'Music: OFF' : 'Music: ON'}</button>${inHub ? `<button class="btn grey" data-a="arcade">${svg('home')} Back to arcade</button>` : `<button class="btn grey" data-a="home">${svg('home')} Back to park</button>`}</div>`, {
-    restart: () => z.restart(G), mute: () => $('bMute').onclick(), arcade: () => { Save.flush(); location.href = '../'; }, home: () => G.go('hub', { from: z.id }),
+  G.modal(`<h2>Paused</h2><div class="row"><button class="btn green" data-a="resume">${svg('play')} Keep playing</button>${z && z.respawn ? `<button class="btn blue" data-a="respawn">Back to checkpoint</button>` : ''}${z && z.restart ? `<button class="btn blue" data-a="restart">${z.restartLabel || 'Restart'}</button>` : ''}<button class="btn pink" data-a="mute">${S.muted ? 'Music: OFF' : 'Music: ON'}</button>${inHub ? `<button class="btn grey" data-a="arcade">${svg('home')} Back to arcade</button>` : `<button class="btn grey" data-a="home">${svg('home')} Back to park</button>`}</div>`, {
+    restart: () => z.restart(G), respawn: () => z.respawn(G), mute: () => $('bMute').onclick(), arcade: () => { Save.flush(); location.href = '../'; }, home: () => G.go('hub', { from: z.id }),
   });
 }
 G.showPause = showPause;
@@ -241,10 +242,10 @@ function openEditor() {
   const st = $('edStage'); if (!st._bound) { st._bound = 1; let id = null, lx = 0; st.addEventListener('pointerdown', (e) => { id = e.pointerId; lx = e.clientX; st.setPointerCapture(id); }); st.addEventListener('pointermove', (e) => { if (e.pointerId === id) { edRot += (e.clientX - lx) * 0.012; lx = e.clientX; } }); st.addEventListener('pointerup', () => { id = null; }); }
 }
 function rebuildEd() { if (edAvatar) edScene.remove(edAvatar.root); edAvatar = buildAvatar(edDraft); edAvatar.root.traverse((o) => { if (o.isMesh) { o.castShadow = true; } }); edScene.add(edAvatar.root); }
-function applyDraft(k, v) { edDraft[k] = v; rebuildEd(); renderGrid(); refreshBuy(); music.sfx('pop', { volume: 0.6 }); edAvatar.squash = -0.12; if (k === 'hat') edView = { y: 1.5, d: 3.6, a: 0 }; else if (k === 'face') edView = { y: 1.5, d: 3.2, a: 0 }; }
+function applyDraft(k, v) { edDraft[k] = v; rebuildEd(); renderGrid(); refreshBuy(); music.sfx('pop', { volume: 0.6 }); edAvatar.squash = -0.12;  }
 function renderTabs() {
   const t = $('edTabs'); t.innerHTML = '';
-  TABS.forEach(([k, n]) => { const b = document.createElement('button'); b.textContent = n; if (k === edTab) b.className = 'on'; b.onclick = () => { edTab = k; music.sfx('click'); edView = k === 'hat' || k === 'face' ? { y: 1.5, d: 3.4, a: 0 } : k === 'pack' ? { y: 1.0, d: 5, a: Math.PI } : { y: 0.95, d: 5.6, a: 0.4 }; renderTabs(); renderGrid(); refreshBuy(); }; t.appendChild(b); });
+  TABS.forEach(([k, n]) => { const b = document.createElement('button'); b.textContent = n; if (k === edTab) b.className = 'on'; b.onclick = () => { edTab = k; music.sfx('click'); edView = k === 'hat' || k === 'face' ? { y: 1.3, d: 4.3, a: 0 } : { y: 0.95, d: 5.6, a: 0.4 }; if (k === 'pack') edRot = Math.PI + 0.35; else if (edRot > 2.5) edRot = 0.35; renderTabs(); renderGrid(); refreshBuy(); }; t.appendChild(b); });
 }
 const owned = (k, id) => S.owned[k] && S.owned[k].includes(id);
 function renderGrid() {
@@ -268,7 +269,7 @@ function refreshBuy() {
 }
 $('edBuy').onclick = () => {
   const k = curKind(), it = ITEMS[k].find((x) => x.id === edDraft[k]); if (!it || S.coins < it.price) return;
-  S.coins -= it.price; (S.owned[k] = S.owned[k] || []).push(it.id); Save.save(); refreshCoins(); music.sfx('powerup'); G.ach('fashion');
+  S.coins -= it.price; (S.owned[k] = S.owned[k] || []).push(it.id); S.avatar[k] = it.id; Save.save(); refreshCoins(); music.sfx('powerup'); G.ach('fashion');
   edScene.fx.burst(0, 1.4, 0, 30, [0xffd23f, 0xff6fb5, 0x6fd0ff, 0xffffff], 5, 1.1, 0.4, 5); edAvatar.emote = 'cheer'; edAvatar.emT = 0; renderGrid(); refreshBuy();
 };
 $('edDone').onclick = () => {
@@ -280,8 +281,6 @@ $('edDone').onclick = () => {
 function renderEditor(dt) {
   const r = $('edStage').getBoundingClientRect(), W = innerWidth, H = innerHeight;
   edCur.y = damp(edCur.y, edView.y, 6, dt); edCur.d = damp(edCur.d, edView.d, 6, dt);
-  if (edView.a) edRot = edRot * 0.0 + edRot; // keep user rotation
-  if (edView.a === Math.PI) { const target = Math.PI; edRot = edRot + (target - edRot) * Math.min(1, dt * 3) * (edView.fresh ? 0 : 0); }
   edAvatar.root.rotation.y = edRot + Math.sin(performance.now() / 1400) * 0.05; updateAvatar(edAvatar, dt, 0, false, 0);
   edCam.aspect = r.width / r.height; edCam.fov = r.width / r.height < 0.9 ? 40 : 34; edCam.updateProjectionMatrix();
   const d = edCur.d * (r.width / r.height < 0.9 ? 1.25 : 1);
@@ -303,6 +302,7 @@ $('playBtn').onclick = async () => {
   G.zone.startPlay && G.zone.startPlay(G);
   G.playMusic('sunny', 0.6);
   setTimeout(() => { if (G.dailyAvailable()) G.claimDaily(); }, 900);
+  if (!S.hint) { S.hint = 1; Save.save(); const tch = document.body.classList.contains('touch'); const hx = G.P.body.x, hz = G.P.body.z; setTimeout(() => { G.hint(tch ? 'Drag on the left to run, tap JUMP to hop!<small>Drag on the right to look around</small>' : 'WASD to run, SPACE to jump<small>Drag the mouse to look around</small>', 14000); const iv = setInterval(() => { if (Math.hypot(G.P.body.x - hx, G.P.body.z - hz) > 7) { clearInterval(iv); G.hint('Walk into a glowing gate to play a game!<small>Collect coins and pick up your daily gift</small>', 9000); } }, 400); }, 2200); }
 };
 
 // ---------- main loop ----------
@@ -325,7 +325,7 @@ function frame(now) {
   renderer.render(z.scene, camera);
 }
 function titleCamera(dt) {
-  const a = performance.now() / 6000; camera.position.set(Math.sin(a) * 26, 8.5, 2 + Math.cos(a) * 26); camera.lookAt(0, 2.2, 2);
+  const a = performance.now() / 6000, k = innerWidth / innerHeight < 1 ? 1.5 : 1; camera.position.set(Math.sin(a) * 26 * k, 8.5 * k, 2 + Math.cos(a) * 26 * k); camera.lookAt(0, 2.2, 2);
 }
 G.titleCam = titleCamera;
 

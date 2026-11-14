@@ -42,7 +42,7 @@ function layout() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
   const aspect = cssW / cssH;
-  W = clamp(740 * aspect, 700, 1500); scale = cssW / W; H = cssH / scale;
+  W = clamp(740 * aspect, 520, 1500); scale = cssW / W; H = cssH / scale;
   floorY = H - (104 + sbPx) / scale;
   bg = null;
   const k = Math.round(W) + 'x' + Math.round(H);
@@ -95,7 +95,7 @@ const JOINTS = [
   ['knL', 'tL', [0, 17], 'sL', [0, -20], 1.9], ['knR', 'tR', [0, 17], 'sR', [0, -20], 1.9],
 ];
 const LAYOUT = { head: [0, -49, 'head'], torso: [0, 0, 'torso'], uL: [-38, -6, 'arm'], uR: [38, -6, 'arm'], fL: [-38, 29, 'fore'], fR: [38, 29, 'fore'], tL: [-14, 47, 'thigh'], tR: [14, 47, 'thigh'], sL: [-14, 84, 'shin'], sR: [14, 84, 'shin'] };
-const TUNE = { pd: 1, stiff: 0.9, damp: 0.14, pos: 8, vel: 6, con: 10, limb: 1, torso: 1 };
+const TUNE = { kp: 0.03, kd: 0.3, amax: 1.6, share: 0.35, anti: 0.8, lag: 34, grab: 0.22, pd: 1, stiff: 0.6, damp: 0.12, pos: 8, vel: 6, con: 10, limb: 1, torso: 1 };
 const DENS = { head: 0.0016, torso: 0.0024, arm: 0.0013, fore: 0.0013, thigh: 0.0014, shin: 0.0014 };
 const STAND_H = 104; // torso center to sole
 function spawnRobot(x, y, slot, old) {
@@ -109,7 +109,7 @@ function spawnRobot(x, y, slot, old) {
   for (const [name, pa, pA, pb, pB, lim] of JOINTS) {
     const A = r.parts[pa], B = r.parts[pb];
     const c = Constraint.create({ bodyA: A, pointA: { x: pA[0], y: pA[1] }, bodyB: B, pointB: { x: pB[0], y: pB[1] }, length: 0, stiffness: TUNE.stiff, damping: TUNE.damp });
-    r.joints.push({ name, c, A, B, lim, keep: /^(hip|kn|neck)/.test(name), strain: 0, broken: false, rel: 0, freeAt: 0 });
+    r.joints.push({ name, c, A, B, la: { x: pA[0], y: pA[1] }, lb: { x: pB[0], y: pB[1] }, lim, keep: /^(hip|kn|neck)/.test(name), strain: 0, broken: false, rel: 0, freeAt: 0 });
   }
   Composite.add(world, Object.values(r.parts)); Composite.add(world, r.joints.map((j) => j.c));
   robots.push(r); return r;
@@ -155,9 +155,9 @@ function setupLevel(L) {
   for (const [fx, fy, r] of L.bumpers || []) addStatic(Bodies.circle(W * fx, floorY * fy, r, { isStatic: true, restitution: 1.2 }), 'bumper', { r, pulse: 0, bumper: 1 });
   for (const [fx, w] of L.tramps || []) addStatic(Bodies.rectangle(W * fx, floorY - 14, w, 28, { isStatic: true, restitution: 0.4, chamfer: { radius: 8 } }), 'tramp', { w, pad: 1, boost: 24, pulse: 0 });
   if (L.type === 'ring') { ring = { x: W * L.ring[0], y: floorY * L.ring[1], rx: 30, ry: 84, glow: 0, hit: 0 }; spawnRobot(W * (L.ring[0] > 0.5 ? 0.17 : 0.8), 0, 0); }
-  else if (L.type === 'pop') { const n = L.robots, sp = Math.min(240, (W - 300) / n); for (let i = 0; i < n; i++) spawnRobot(W / 2 + (i - (n - 1) / 2) * sp, 0, i); }
+  else if (L.type === 'pop') { const n = L.robots, sp = Math.min(240, (W - 160) / n); for (let i = 0; i < n; i++) spawnRobot(W / 2 + (i - (n - 1) / 2) * sp, 0, i); }
   else { // knock: rows of robots on ledges
-    const x0 = W * 0.36, x1 = W - 90, cap = Math.max(3, Math.floor((x1 - x0) / 82) + 1), rows = Math.ceil(L.robots / cap); let k = 0;
+    const x0 = W < 800 ? 80 : W * 0.36, x1 = W - 90, cap = Math.max(3, Math.floor((x1 - x0) / 82) + 1), rows = Math.ceil(L.robots / cap); let k = 0;
     for (let rw = 0; rw < rows; rw++) {
       const cnt = Math.min(cap, L.robots - k), sp = Math.min(86, (x1 - x0) / Math.max(1, cnt - 1)), ly = floorY - rw * 250;
       if (rw > 0) addStatic(Bodies.rectangle((x0 + x1) / 2 + 20, ly + 9, x1 - x0 + 120, 18, { isStatic: true, friction: 0.7, chamfer: { radius: 6 } }), 'ledge', { w: x1 - x0 + 120, h: 18 });
@@ -193,13 +193,14 @@ function onCollide(e) {
         if (ra || rb) (ra || rb).stun = Math.max((ra || rb).stun, S.mode === 'mission' ? 1e9 : 2);
       }
     }
-    const r = ra || rb; if (!r) { if ((pa && pa.kind === 'duck') || (pb && pb.kind === 'duck')) { if (rv > 5) { sfx('squeak', .6, rand(.9, 1.5), 80); } } continue; }
+    const part = ra ? a : b; const r = ra || rb; if (!r) { if ((pa && pa.kind === 'duck') || (pb && pb.kind === 'duck')) { if (rv > 5) { sfx('squeak', .6, rand(.9, 1.5), 80); } } continue; }
     if (rv > 7) {
       const now = performance.now();
       const big = rv > 15;
       if (now - lastHit > 55) { lastHit = now; sfx(big ? 'hit' : 'pop', clamp(rv / 24, .25, .8), rand(.85, 1.25), 55); }
       S.chaos = Math.min(1.2, S.chaos + rv * 0.006);
       if (rv > 10) { spawnP(2, sp.x, sp.y, rand(-2, 2), rand(-2, 2), .3, rand(10, 18), '#fff6a8', 0, 0, 0); if (big) { dust(sp.x, sp.y, 3); S.shake = Math.max(S.shake, clamp(rv / 4, 2, 9)); } }
+      if (rv > 22 && !r.frozen && S.mode !== 'demo' && Math.random() < (rv - 22) * 0.04) { const pr = part.plugin.robot; const jj = pr.joints.find((q) => q.B === part && !q.broken); if (jj) { const [qx, qy] = jointWorld(jj.A, jj.la); snapJoint(pr, jj, qx, qy); } }
       if (rv > 12 && !r.frozen) {
         for (const rr of [ra, rb]) if (rr && !rr.frozen) { rr.stun = Math.max(rr.stun, S.mode === 'mission' ? 1e9 : 2.6); rr.stand = 0; }
         if (rv > 20 && Math.random() < .35) popText(['BONK!', 'WHAM!', 'BOP!', 'THUNK!'][Math.random() * 4 | 0], sp.x, sp.y - 30, '#ffd23f', 30);
@@ -221,6 +222,16 @@ function allDyn() {
 }
 function stepForces() {
   const dyn = allDyn();
+  for (const r of robots) if (r.held) { const gy = engine.gravity.y * engine.gravity.scale * TUNE.anti; for (const k in r.parts) { const b = r.parts[k]; Body.applyForce(b, b.position, { x: 0, y: -gy * b.mass }); } }
+  for (const p of pointers.values()) if (p.grab) {
+    const b = p.grab.body, r = b.plugin && b.plugin.robot, [hx, hy] = jointWorld(b, p.grab.lp);
+    let tm = b.mass; if (r) { tm = 0; for (const k in r.parts) tm += r.parts[k].mass; }
+    const meff = clamp(1 + (tm / b.mass - 1) * TUNE.share, 1, 9);
+    let ax = TUNE.kp * (p.x - hx) - TUNE.kd * b.velocity.x, ay = TUNE.kp * (p.y - hy) - TUNE.kd * b.velocity.y; const am = Math.hypot(ax, ay), cap = TUNE.amax * (1 + 0.1 * save.up.grip);
+    if (am > cap) { ax *= cap / am; ay *= cap / am; }
+    Body.applyForce(b, { x: hx, y: hy }, { x: b.mass * meff * ax / 278, y: b.mass * meff * ay / 278 });
+    if (Math.hypot(b.velocity.x, b.velocity.y) < 6) Body.setAngularVelocity(b, b.angularVelocity * 0.9);
+  }
   for (const p of pointers.values()) {
     if (p.tool === 'magnet') {
       for (const b of dyn) {
@@ -251,7 +262,6 @@ function jointWorld(body, pt) { const c = Math.cos(body.angle), s = Math.sin(bod
 const GAIN = { torso: [0.03, 0.1], head: [0.025, 0.1], thigh: [0.034, 0.1], shin: [0.034, 0.1], arm: [0.012, 0.08], fore: [0.012, 0.08] };
 const SNAP_WORDS = ['BOING!', 'SPROING!', 'POP!', 'TWANG!', 'POINK!'];
 function snapJoint(r, j, wx, wy) {
-  (window.__snaplog = window.__snaplog || []).push([j.name, Math.round(j.d || 0), Math.round(j.strain), +(j.pullR || 0).toFixed(2), +S.time.toFixed(2)]);
   j.broken = true; Composite.remove(world, j.c);
   let nx = j.B.position.x - j.A.position.x, ny = j.B.position.y - j.A.position.y; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
   Body.setVelocity(j.B, { x: j.B.velocity.x + nx * 7, y: j.B.velocity.y + ny * 7 - 4 }); Body.setVelocity(j.A, { x: j.A.velocity.x - nx * 2.5, y: j.A.velocity.y - ny * 2.5 });
@@ -287,12 +297,12 @@ function postStep(dt) {
     }
     for (const j of r.joints) {
       if (j.broken) continue;
-      const [ax, ay] = jointWorld(j.A, j.c.pointA), [bx, by] = jointWorld(j.B, j.c.pointB);
+      const [ax, ay] = jointWorld(j.A, j.la), [bx, by] = jointWorld(j.B, j.lb);
       const d = Math.hypot(ax - bx, ay - by); j.d = d; j.ax = ax; j.ay = ay; j.bx = bx; j.by = by;
-      j.strain = j.strain * 0.92 + (d > 16 ? (d - 16) : 0);
+      j.strain = j.strain * 0.92 + (d > 26 ? (d - 26) : 0);
       { const ra = Math.max(clamp(j.strain / 170, 0, 1), j.pullR || 0); if (ra > (j.A.plugin.jit || 0)) j.A.plugin.jit = ra; if (ra > (j.B.plugin.jit || 0)) j.B.plugin.jit = ra; }
-      if (!r.frozen && S.mode !== 'demo' && (j.strain > 170 || d > 90)) { snapJoint(r, j, (ax + bx) / 2, (ay + by) / 2); continue; }
-      if (j.lim < 2.5) { const lim = j.keep ? j.lim + (0.1 - j.lim) * r.stand : j.lim; const rel = wrapA(j.B.angle - j.A.angle); if (Math.abs(rel) > lim) { Body.setAngle(j.B, j.A.angle + Math.sign(rel) * lim); Body.setAngularVelocity(j.B, j.A.angularVelocity * 0.6); } }
+      if (!r.frozen && S.mode !== 'demo' && (j.strain > 170 || d > 110)) { snapJoint(r, j, (ax + bx) / 2, (ay + by) / 2); continue; }
+      if (j.lim < 2.5) { const lim = j.keep ? j.lim + (0.1 - j.lim) * r.stand : j.lim; const rel = wrapA(j.B.angle - j.A.angle); if (Math.abs(rel) > lim) { Body.setAngle(j.B, j.A.angle + Math.sign(rel) * lim); { const [nx, ny] = jointWorld(j.B, j.lb); Body.translate(j.B, { x: ax - nx, y: ay - ny }); } Body.setAngularVelocity(j.B, j.A.angularVelocity * 0.6); } }
     }
     // lying down detection (for knock missions)
     const t = r.parts.torso; const lying = Math.abs(wrapA(t.angle)) > 1.1 || (r.baseY && t.position.y > r.baseY + 42);
@@ -303,10 +313,10 @@ function postStep(dt) {
   for (const r of robots) for (const j of r.joints) j.pullR = 0;
   for (const p of pointers.values()) {
     if (!p.grab) continue; const b = p.grab.body, r = b.plugin && b.plugin.robot; if (!r) continue;
-    const [hx, hy] = jointWorld(b, p.grab.con.pointB), g = Math.hypot(p.x - hx, p.y - hy);
-    p.pull = Math.max(0, (p.pull || 0) + (g > 60 ? (g - 60) * dt : -dt * 3));
+    const [hx, hy] = jointWorld(b, p.grab.lp), g = Math.hypot(p.x - hx, p.y - hy);
+    p.pull = Math.max(0, (p.pull || 0) + (g > TUNE.lag ? (g - TUNE.lag) * dt : -dt * 3));
     const j = r.joints.find((q) => q.B === b && !q.broken);
-    if (j) { j.pullR = clamp(p.pull / 9, 0, 1); if (p.pull > 9 && !r.frozen && S.mode !== 'demo') { snapJoint(r, j, j.ax || hx, j.ay || hy); p.pull = 0; } }
+    if (j) { j.pullR = clamp(p.pull / 6, 0, 1); if (p.pull > 6 && !r.frozen && S.mode !== 'demo') { snapJoint(r, j, j.ax || hx, j.ay || hy); p.pull = 0; } }
   }
   for (let i = ducks.length - 1; i >= 0; i--) { const d = ducks[i]; d.life -= dt; const sp = Math.hypot(d.body.velocity.x, d.body.velocity.y); if (sp > 40) Body.setVelocity(d.body, { x: d.body.velocity.x * 40 / sp, y: d.body.velocity.y * 40 / sp }); if (d.life <= 0) { poof(d.body.position.x, d.body.position.y); Composite.remove(world, d.body); ducks.splice(i, 1); } }
   for (let i = bombs.length - 1; i >= 0; i--) { const b = bombs[i]; b.t -= dt; if (b.t <= 0) { explode(b); Composite.remove(world, b.body); bombs.splice(i, 1); } }
@@ -328,7 +338,7 @@ function freezeBot(r) {
   r.frozen = 7 * (1 + 0.15 * save.up.power); r.stun = 0; r.stand = 0; r.charge = 0;
   for (const k in r.parts) { const b = r.parts[k]; b.restitution = 0.95; b.frictionAir = 0.004; b.friction = 0.05; }
   for (const j of r.joints) { j.c.stiffness = 1; j.c.damping = 0.02; j.strain = 0; }
-  const t = r.parts.torso; sparkle(t.position.x, t.position.y, 24, '#bfefff', 9); ringFx(t.position.x, t.position.y, 130, '#bfefff'); popText('Ice-pop!', t.position.x, t.position.y - 90, '#bfefff', 40); sfx('sparkle', 1, 1.3); S.shake = 5;
+  const t = r.parts.torso; sparkle(t.position.x, t.position.y, 24, '#bfefff', 9); ringFx(t.position.x, t.position.y, 130, '#bfefff'); popText('Ice-pop!', t.position.x, t.position.y - 90, '#bfefff', 40); sfx('sparkle', 1, 1); S.shake = 5;
   Body.setVelocity(r.parts.torso, { x: rand(-5, 5), y: -9 });
 }
 function freezeTick(p, dt) {
@@ -342,7 +352,7 @@ function explode(b) {
   confetti(x, y, 50, 14, 6); sparkle(x, y, 20, '#ffd23f', 10); ringFx(x, y, R * 0.8, '#ffe56a'); ringFx(x, y, R * 0.5, '#ff8ad8'); dust(x, y, 8);
   sfx('boom', .55, 1.4, 20); sfx('pop', .9, .8, 20); S.shake = 14; S.chaos = Math.min(1.3, S.chaos + .5); S.slow = 0.12;
   popText('BOOM!', x, y - 40, '#ff8ad8', 52);
-  for (const bd of allDyn()) { if (bd === b.body) continue; const dx = bd.position.x - x, dy = bd.position.y - y, d = Math.hypot(dx, dy); if (d < R) { const f = (1 - d / R) * 22 * pw; const l = d || 1; Body.setVelocity(bd, { x: bd.velocity.x + dx / l * f, y: bd.velocity.y + dy / l * f - 4 }); const rr = bd.plugin && bd.plugin.robot; if (rr && !rr.frozen) { rr.stun = Math.max(rr.stun, S.mode === 'mission' ? 1e9 : 3); rr.stand = 0; } } }
+  for (const bd of allDyn()) { if (bd === b.body) continue; const dx = bd.position.x - x, dy = bd.position.y - y, d = Math.hypot(dx, dy); if (d < R) { const f = (1 - d / R) * 22 * pw; const l = d || 1; Body.setVelocity(bd, { x: bd.velocity.x + dx / l * f, y: bd.velocity.y + dy / l * f - 4 }); const rr = bd.plugin && bd.plugin.robot; if (rr && !rr.frozen) { rr.stun = Math.max(rr.stun, S.mode === 'mission' ? 1e9 : 3); rr.stand = 0; if (S.mode !== 'demo' && Math.random() < 0.55 * (1 - d / R)) { const jj = rr.joints.find((q) => q.B === bd && !q.broken); if (jj) snapJoint(rr, jj, bd.position.x, bd.position.y); } } } }
 }
 function setGravity(dir) {
   S.gflip = dir; engine.gravity.y = ARENAS[S.arena].gravity * dir; if (dir < 0) S.gTimer = 6 * (1 + 0.15 * save.up.power); else S.gTimer = 0;
@@ -382,9 +392,10 @@ const TOOLS = [
 ];
 const fx = [];
 function toolPower(id) { return power(); }
-function pushImpulse(x, y, R, vx, vy, fall = 0.5, stunIt = true) {
+function pushImpulse(x, y, R, vx, vy, fall = 0.5, stunIt = true, popC = 0) {
   for (const b of allDyn()) {
     const dx = b.position.x - x, dy = b.position.y - y, d = Math.hypot(dx, dy); if (d > R) continue;
+    if (popC && b.plugin && b.plugin.robot && S.mode !== 'demo' && Math.random() < popC * (1 - d / R)) { const rr = b.plugin.robot, jj = rr.joints.find((q) => q.B === b && !q.broken); if (jj && !rr.frozen) { const [qx, qy] = jointWorld(jj.A, jj.la); snapJoint(rr, jj, qx, qy); } }
     const f = 1 - (d / R) * fall; Body.setVelocity(b, { x: b.velocity.x + vx * f, y: b.velocity.y + vy * f });
     const rr = b.plugin && b.plugin.robot; if (rr && stunIt && !rr.frozen) { rr.stun = Math.max(rr.stun, S.mode === 'mission' ? 1e9 : 2.8); rr.stand = 0; }
   }
@@ -393,10 +404,10 @@ function stepFx(dt) {
   for (let i = fx.length - 1; i >= 0; i--) {
     const f = fx[i]; f.t += dt;
     if (f.kind === 'glove') {
-      if (!f.hit && f.t >= 0.15) { f.hit = true; const pw = power(); pushImpulse(f.x, f.y, 120, f.dx * 20 * pw, f.dy * 20 * pw - 4, 0.55); sfx('hit', .9, .8, 20); sfx('whoosh', .5, 1.2, 20); popText(['KAPOW!', 'POW!', 'WHAM!'][Math.random() * 3 | 0], f.x, f.y - 60, '#ff5d6c', 46); S.shake = 11; S.chaos = Math.min(1.3, S.chaos + .35); confetti(f.x, f.y, 14, 9); ringFx(f.x, f.y, 100, '#fff'); S.slow = 0.08; }
+      if (!f.hit && f.t >= 0.15) { f.hit = true; const pw = power(); pushImpulse(f.x, f.y, 120, f.dx * 20 * pw, f.dy * 20 * pw - 4, 0.55, true, 0.5); sfx('hit', .9, .8, 20); sfx('whoosh', .5, 1.2, 20); popText(['KAPOW!', 'POW!', 'WHAM!'][Math.random() * 3 | 0], f.x, f.y - 60, '#ff5d6c', 46); S.shake = 11; S.chaos = Math.min(1.3, S.chaos + .35); confetti(f.x, f.y, 14, 9); ringFx(f.x, f.y, 100, '#fff'); S.slow = 0.08; }
       if (f.t > 0.6) fx.splice(i, 1);
     } else if (f.kind === 'hammer') {
-      if (!f.hit && f.t >= 0.2) { f.hit = true; const pw = power(); pushImpulse(f.x, f.y, 100, f.sx * 6 * pw, 18 * pw, 0.6); sfx('squeak', 1, .7, 20); sfx('hit', .7, 1.1, 20); popText('BONK!', f.x, f.y - 60, '#ffd23f', 44); S.shake = 9; S.chaos = Math.min(1.3, S.chaos + .3); dust(f.x, f.y + 20, 6); ringFx(f.x, f.y, 90, '#ffd23f'); S.slow = 0.06; }
+      if (!f.hit && f.t >= 0.2) { f.hit = true; const pw = power(); pushImpulse(f.x, f.y, 100, f.sx * 6 * pw, 18 * pw, 0.6, true, 0.45); sfx('squeak', 1, .7, 20); sfx('hit', .7, 1.1, 20); popText('BONK!', f.x, f.y - 60, '#ffd23f', 44); S.shake = 9; S.chaos = Math.min(1.3, S.chaos + .3); dust(f.x, f.y + 20, 6); ringFx(f.x, f.y, 90, '#ffd23f'); S.slow = 0.06; }
       if (f.t > 0.6) fx.splice(i, 1);
     } else if (f.kind === 'cannon') { if (f.t > 0.5) fx.splice(i, 1); }
   }
@@ -465,13 +476,12 @@ function findPart(p) {
 function tryGrab(pt, p) {
   const b = findPart(p); if (!b) { sparkle(p.x, p.y, 4, '#ffffff', 3); return false; }
   const c = Math.cos(-b.angle), s = Math.sin(-b.angle), dx = p.x - b.position.x, dy = p.y - b.position.y;
-  const con = Constraint.create({ pointA: { x: p.x, y: p.y }, bodyB: b, pointB: { x: dx * c - dy * s, y: dx * s + dy * c }, length: 0.01, stiffness: 0.22 + 0.04 * save.up.grip, damping: 0.1 });
-  Composite.add(world, con); pt.grab = { body: b, con, m: b.mass }; sfx('squeak', .45, rand(1, 1.6), 60);
+  pt.grab = { body: b, lp: { x: dx * c - dy * s, y: dx * s + dy * c } }; pt.pull = 0; sfx('squeak', .45, rand(1, 1.6), 60);
   const r = b.plugin && b.plugin.robot; if (r) { r.stun = Math.max(r.stun, 1.2); r.stand = 0; r.happy = 0.6; }
   startAction(); return true;
 }
 function releaseGrab(pt) {
-  if (!pt.grab) return; const { body, con, m } = pt.grab; Composite.remove(world, con);
+  if (!pt.grab) return; const { body } = pt.grab;
   const g = 1.0 + 0.1 * save.up.grip, vx = clamp(pt.vx * g, -36, 36), vy = clamp(pt.vy * g, -36, 36);
   if (Math.hypot(vx, vy) > 3) { Body.setVelocity(body, { x: vx, y: vy }); if (Math.hypot(vx, vy) > 14) { sfx('whoosh', .5, rand(.9, 1.3), 80); S.chaos = Math.min(1.2, S.chaos + .15); } }
   S.moves++; pt.grab = null;
@@ -492,7 +502,6 @@ canvas.addEventListener('pointermove', (e) => {
   const p = toWorld(e); const now = performance.now(), steps = Math.max(0.5, (now - pt.t) / 16.667);
   pt.vx += ((p.x - pt.x) / steps - pt.vx) * 0.5; pt.vy += ((p.y - pt.y) / steps - pt.vy) * 0.5; pt.t = now;
   pt.moved += Math.hypot(p.x - pt.x, p.y - pt.y); pt.x = p.x; pt.y = p.y;
-  if (pt.grab) { pt.grab.con.pointA.x = p.x; pt.grab.con.pointA.y = p.y; }
 });
 function endPointer(e) {
   const pt = pointers.get(e.pointerId); if (!pt) return; pointers.delete(e.pointerId);
@@ -529,7 +538,7 @@ function drawRobot(r) {
   ctx.fillStyle = 'rgba(20,10,60,' + (0.28 * clamp(1 - h / 700, 0, 1)) + ')'; ctx.beginPath(); ctx.ellipse(t.position.x, floorY + 5, 56 * clamp(1 - h / 1200, .5, 1), 9, 0, 0, TAU); ctx.fill();
   for (const j of r.joints) {
     if (j.broken) {
-      for (const [bd, pt] of [[j.A, j.c.pointA], [j.B, j.c.pointB]]) { const [x, y] = jointWorld(bd, pt); ctx.fillStyle = '#26214d'; ctx.beginPath(); ctx.arc(x, y, 5, 0, TAU); ctx.fill(); ctx.strokeStyle = '#cfd6e6'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#9aa3c4'; ctx.beginPath(); ctx.arc(x, y, 1.8, 0, TAU); ctx.fill(); }
+      for (const [bd, pt] of [[j.A, j.la], [j.B, j.lb]]) { const [x, y] = jointWorld(bd, pt); ctx.fillStyle = '#26214d'; ctx.beginPath(); ctx.arc(x, y, 5, 0, TAU); ctx.fill(); ctx.strokeStyle = '#cfd6e6'; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = '#9aa3c4'; ctx.beginPath(); ctx.arc(x, y, 1.8, 0, TAU); ctx.fill(); }
     } else if (j.d > 2.5) drawSpring(j.ax, j.ay, j.bx, j.by, Math.max(clamp(j.strain / 170, 0, 1), j.pullR || 0));
   }
   const mood = r.frozen > 0 ? 'head' : (r.stun > 0.15 && !r.held ? 'headDizzy' : (r.happy > 0 || r.held ? 'headHappy' : 'head'));
@@ -608,7 +617,7 @@ function drawFx() {
 }
 function drawPointers() {
   for (const p of pointers.values()) {
-    if (p.tool === 'grab') { ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, p.grab ? 18 : 26, 0, TAU); ctx.stroke(); if (p.grab) { ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.grab.body.position.x, p.grab.body.position.y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, TAU); ctx.fill(); } }
+    if (p.tool === 'grab') { ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, p.grab ? 18 : 26, 0, TAU); ctx.stroke(); if (p.grab) { { const [hx, hy] = jointWorld(p.grab.body, p.grab.lp); drawSpring(hx, hy, p.x, p.y, clamp((p.pull || 0) / 6, 0, 1)); } ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, TAU); ctx.fill(); } }
     else if (p.tool === 'magnet') {
       for (let i = 0; i < 3; i++) { const k = ((S.time * 1.4 + i / 3) % 1); ctx.strokeStyle = 'rgba(255,93,108,' + (1 - k) * .6 + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(p.x, p.y, 300 * (1 - k), 0, TAU); ctx.stroke(); }
       ctx.save(); ctx.translate(p.x, p.y); ctx.lineWidth = 12; ctx.strokeStyle = '#2a2260'; ctx.beginPath(); ctx.arc(0, 0, 22, Math.PI, 0); ctx.lineTo(22, 22); ctx.moveTo(-22, 0); ctx.lineTo(-22, 22); ctx.stroke(); ctx.lineWidth = 6; ctx.strokeStyle = '#ff4f6a'; ctx.stroke(); ctx.fillStyle = '#e8ecf8'; ctx.fillRect(-27, 18, 10, 10); ctx.fillRect(17, 18, 10, 10); ctx.restore();
@@ -742,7 +751,7 @@ function resumeGame() { S.paused = false; overlay('pause', false); }
 function winMission() {
   if (S.over) return; S.over = true; const L = S.level, frac = S.timeLeft / L.time, stars = frac > 0.5 ? 3 : frac > 0.25 ? 2 : 1;
   const reward = 25 + 15 * stars; addCoins(reward); const prev = save.stars[L.id] || 0; if (stars > prev) save.stars[L.id] = stars; dirty = true; persist();
-  confetti(W / 2, H * 0.35, 80, 16, 8); sfx('win', 1, 1, 10); S.shake = 6; popText('Mission complete!', W / 2, H * 0.3, '#ffd23f', 56);
+  confetti(W / 2, H * 0.35, 80, 16, 8); sfx('powerup', 1, .9, 10); setTimeout(() => sfx('sparkle', .8, 1, 10), 250); setTimeout(() => sfx('coin', .8, 1, 10), 450); S.shake = 6; popText('Mission complete!', W / 2, H * 0.3, '#ffd23f', 56);
   try { music.setIntensity(1); } catch (_) { /* ignore */ }
   setTimeout(() => showEnd(true, stars, reward), 1500);
 }
@@ -753,7 +762,7 @@ function showEnd(win, stars, reward) {
   if (S.screen !== 'play') return; const L = S.level;
   $('endTitle').textContent = win ? 'Great job!' : 'So close!';
   $('endMsg').textContent = win ? ('+' + reward + ' coins!  ' + (stars < 3 ? 'Be quicker for more stars.' : 'Perfect run!')) : 'Time ran out. Try again, you can do it!';
-  const st = $('stars'); st.innerHTML = ''; for (let i = 0; i < 3; i++) { const d = document.createElement('div'); d.innerHTML = icon(i < stars ? 'star' : 'starOff'); const sv = d.firstChild; sv.style.width = '96px'; sv.style.height = '96px'; st.appendChild(sv); setTimeout(() => { sv.classList.add('pop'); if (i < stars) sfx('sparkle', .6, 1 + i * .2); }, 250 + i * 330); }
+  const st = $('stars'); st.innerHTML = ''; for (let i = 0; i < 3; i++) { const d = document.createElement('div'); d.innerHTML = icon(i < stars ? 'star' : 'starOff'); const sv = d.firstChild; sv.style.width = '96px'; sv.style.height = '96px'; st.appendChild(sv); setTimeout(() => { sv.classList.add('pop'); if (i < stars) sfx('sparkle', .6, .85 + i * .06); }, 250 + i * 330); }
   const next = LV(L.id + 1); $('eNext').classList.toggle('hidden', !(win && next)); overlay('end', true);
 }
 $('eNext').onclick = () => { const n = LV(S.level.id + 1); overlay('end', false); if (n && save.arenas[n.arena]) startMission(n.id); else { toast('Unlock the next arena in the Toy Shop!'); setScreen('missions'); enterDemo(); } };
@@ -853,4 +862,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 setIcons(); layout(); enterDemo(); setScreen('title'); requestAnimationFrame(frame);
-window.__rs = { TUNE, stepSim, get engine() { return engine; }, S, save, get W() { return W; }, get floorY() { return floorY; }, get robots() { return robots; }, LEVELS, startMission, startSandbox, get props() { return props; }, setGravity, rebuildAll, music };
+window.__rs = { TUNE, pointers, stepSim, get engine() { return engine; }, S, save, get W() { return W; }, get floorY() { return floorY; }, get robots() { return robots; }, LEVELS, startMission, startSandbox, get props() { return props; }, setGravity, rebuildAll, music };

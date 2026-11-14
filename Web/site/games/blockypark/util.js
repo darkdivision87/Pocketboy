@@ -14,7 +14,7 @@ const DEFAULTS = () => ({
   owned: { face: ['smile'], pattern: ['none'], hat: ['none'], pack: ['none'], trail: ['none'] },
   obby: { best: 0, cp: 0, wins: 0 }, tycoon: { cash: 0, total: 0, drop: [1, 0, 0, 0, 0, 0], tap: 0, belt: 0, mult: 0, auto: 0, last: 0 },
   build: [], daily: { last: '', streak: 0 }, ach: {}, stats: { coinsPicked: 0, emotes: 0, jumps: 0, waves: 0 },
-  best: { tagTime: 0, tagWins: 0, race: 0, raceWins: 0 }, muted: false, played: false,
+  best: { tagTime: 0, tagWins: 0, race: 0, raceWins: 0 }, muted: false, played: false, hint: 0,
 });
 function merge(d, s) { if (s && typeof s === 'object') for (const k in d) { if (k in s) { if (d[k] && typeof d[k] === 'object' && !Array.isArray(d[k])) merge(d[k], s[k]); else d[k] = s[k]; } } return d; }
 export const Save = {

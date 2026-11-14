@@ -16,7 +16,8 @@ export function createObby(G) {
   const fw = () => DIRS[o.h], rt = () => { const f = DIRS[o.h]; return [-f[1], f[0]]; };
   const W = (lr, lf) => { const f = fw(), r = rt(); return [o.x + lr * r[0] + lf * f[0], o.z + lr * r[1] + lf * f[1]]; };
   const SZ = (sr, sf) => { const f = fw(), r = rt(); return [Math.abs(r[0]) * sr + Math.abs(f[0]) * sf, Math.abs(r[1]) * sr + Math.abs(f[1]) * sf]; };
-  const col = () => new THREE.Color().setHSL((o.i * 0.071) % 1, 0.78, 0.55);
+  const PAL = [0xff5a5f, 0xff9f1c, 0xf5c518, 0x6fd54a, 0x1fbf8f, 0xa06cff, 0xff6f4a, 0x8bd33f];
+  const col = () => new THREE.Color(PAL[o.i % PAL.length]);
   const dark = (c) => c.clone().multiplyScalar(0.6);
   function stat(lr, ly, lf, sr, sy, sf, color, extra) {
     const [x, zz] = W(lr, lf), [sx, sz] = SZ(sr, sf), cy = o.y + ly - sy / 2;
@@ -65,7 +66,7 @@ export function createObby(G) {
       // flag
       const [fx, fz] = W(2.4, 0.8); batch.box(fx, o.y + 1.4, fz, 0.14, 2.8, 0.14, 0xffffff);
       const flag = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({ color: 0xff5a5f, emissive: 0x000000 })); flag.scale.set(0.9, 0.6, 0.08); flag.position.set(fx, o.y + 2.5, fz); scene.add(flag);
-      const sp = textSprite(i === N - 1 ? 'FINISH' : i === 0 ? 'START' : String(i + 1), { px: 70, size: 0.85, bg: null }); const [sx, sz] = W(0, 3); sp.position.set(sx, o.y + 3.4, sz); sp.material.depthWrite = false; scene.add(sp);
+      const sp = textSprite(i === N - 1 ? 'FINISH' : i === 0 ? 'START' : String(i + 1), { px: 70, size: 0.8, bg: null }); const [sx, sz] = W(0, 3); sp.position.set(fx, o.y + 3.7, fz); sp.material.depthWrite = false; scene.add(sp);
       z.stages.push({ i, x: sx, y: o.y, z: sz, h: o.h, pad, flag });
       if (i === N - 1) { // trophy
         const tm = new THREE.MeshStandardMaterial({ color: 0xffd23f, roughness: 0.2, metalness: 0.7, emissive: 0xff9d00, emissiveIntensity: 0.35 }); const tg = new THREE.Group();
@@ -82,7 +83,8 @@ export function createObby(G) {
     // decorative floating blocks
     for (let k = 0; k < 70; k++) { const a = rr() * 6.283, d = 40 + rr() * 220, x = 70 + Math.cos(a) * d, zz = 70 + Math.sin(a) * d, y = -20 + rr() * 160, s = 2 + rr() * 6; const cc = new THREE.Color().setHSL(rr(), 0.6, 0.7); if (Math.hypot(x - 70, zz - 70) < 60) continue; batch.box(x, y, zz, s, s, s, cc); }
     z.world = batch.build(worldMat()); scene.add(z.world);
-    z.goo = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ color: 0xe85cc8, roughness: 0.7, emissive: 0xc02a98, emissiveIntensity: 0.25 })); z.goo.rotation.x = -Math.PI / 2; z.goo.receiveShadow = false; scene.add(z.goo);
+    const gc = document.createElement('canvas'); gc.width = gc.height = 128; const gg = gc.getContext('2d'); const gr = gg.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.7, 'rgba(255,255,255,.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
+    z.goo = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), new THREE.MeshBasicMaterial({ color: 0x2fb8ff, map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, fog: false })); z.goo.rotation.x = -Math.PI / 2; z.goo.renderOrder = -1; scene.add(z.goo);
     z.last = z.stages[N - 1];
   };
 
@@ -114,6 +116,8 @@ export function createObby(G) {
     for (let k = 0; k < 4; k++) setTimeout(() => G.fx.burst(s.x + (Math.random() - 0.5) * 4, s.y + 3 + Math.random() * 2, s.z + (Math.random() - 0.5) * 4, 40, [0xffd23f, 0xff5c8a, 0x6fd0ff, 0x7ed957, 0xffffff], 9, 1.6, 0.5, 6), k * 350);
     setTimeout(() => G.modal(`<h2>You did it!</h2><div class="stars">${'<span>&#9733;</span>'.repeat(3)}</div><p>All ${N} stages cleared!</p><div class="big">+150 coins</div><div class="row"><button class="btn green" data-a="again">Play again</button><button class="btn blue" data-a="home">Back to park</button></div>`, { again: () => { z.restart(G); }, home: () => G.go('hub', { from: 'obby' }) }), 1500);
   }
+  z.respawn = (G) => respawn(G, false);
+  z.restartLabel = 'Start over';
   z.restart = (G) => { G.S.obby.cp = 0; z.finished = false; z.deaths = 0; z.stages.forEach((s) => { s.got = false; s.flag.material.color.set(0xff5a5f); s.flag.material.emissive.set(0x000000); }); placeAt(G, 0, true); G.playMusic('action', 0.55); };
 
   z.enter = (G, opts) => {
@@ -154,7 +158,7 @@ export function createObby(G) {
       if (b.y < z.goo.position.y + 0.2) respawn(G, true);
     }
     z.goo.position.set(b.x, z.goo.position.y, b.z);
-    const gy = z.stages[z.cp].y - 12; z.goo.position.y = damp(z.goo.position.y, gy, 2, dt); z.goo.material.emissiveIntensity = 0.22 + Math.sin(z.t * 2) * 0.06;
+    const gy = z.stages[z.cp].y - 12; z.goo.position.y = damp(z.goo.position.y, gy, 2, dt); z.goo.scale.setScalar(1 + Math.sin(z.t * 1.5) * 0.03);
     if (z.trophy) z.trophy.rotation.y = z.t;
     G.music.setIntensity(clamp(0.35 + z.cp / N * 0.55, 0, 1));
   };
