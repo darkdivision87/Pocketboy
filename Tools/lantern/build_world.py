@@ -367,7 +367,8 @@ def hand_features(g, S):
         """3x2 house with door at x,y; warp to interior room target (gx,gy)."""
         s = S[k]
         stamp(s, x - 1, y - 1, ["RRR", "HdH"])
-        put(s, x, y + 1, '.')
+        if not walk(s.t[y + 1][x]):
+            put(s, x, y + 1, '.')
         E(k, 'warp %d %d 1 %d %d %d %d' % (x, y, target[0], target[1], tx, ty))
         interior_back[target] = (k, x, y + 1)
         keep(k, x, y + 1)
@@ -513,20 +514,20 @@ def hand_features(g, S):
     pick((3, 6), 'quest:chicks', 7, 4)
 
     # ---- Forest
-    gate((4, 4), 5, 2, 1)
+    gate((4, 4), 6, 3, 1)
     cave((2, 5), 3, 3, (0, 1), 'bomb', 4, 6)
     cave((5, 4), 7, 3, (2, 1), 'burn', 4, 6)
     pick((3, 4), 'quest:mushrooms', 3, 3)
     pick((5, 5), 'quest:mushrooms', 6, 4)
     pick((2, 4), 'quest:mushrooms', 6, 5)
     sign((3, 5), 2, 3, 'forestsign')
-    sign((4, 4), 8, 5, 'd1sign')
+    sign((4, 4), 8, 6, 'd1sign')
     npc((3, 5), 'gus', 7, 3)
     # ---- Meadow secrets
     cave((5, 6), 2, 2, (6, 1), 'bomb', 4, 6)
     sign((3, 6), 2, 4, 'village')
     # ---- Dunes
-    gate((7, 5), 4, 2, 2)
+    gate((7, 5), 4, 3, 2)
     cave((6, 6), 3, 3, (1, 1), 'bomb', 4, 6)
     pick((7, 4), 'quest:shells', 3, 3)
     pick((6, 5), 'quest:shells', 6, 5)
@@ -535,12 +536,12 @@ def hand_features(g, S):
     npc((7, 6), 'dusty', 5, 3)
     sign((6, 4), 2, 3, 'dunesign')
     # ---- Lake
-    gate((0, 5), 4, 2, 3)
+    gate((0, 5), 4, 3, 3)
     house((1, 6), 5, 4, (0, 2))
     npc((0, 4), 'ripple', 5, 4)
     sign((1, 4), 2, 3, 'lakesign')
     # ---- Marsh
-    gate((4, 2), 5, 2, 4)
+    gate((4, 2), 5, 3, 4)
     npc((3, 3), 'moss', 4, 3)
     sign((3, 3), 2, 2, 'marshsign')
     s = S[(2, 3)]
@@ -553,13 +554,13 @@ def hand_features(g, S):
     npc((3, 0), 'marla', 4, 4)
     sign((4, 1), 3, 4, 'hillsign')
     # ---- Frost
-    gate((0, 1), 4, 2, 5)
+    gate((0, 1), 4, 3, 5)
     house((1, 2), 5, 4, (1, 2))
     cave((1, 0), 7, 3, (4, 1), 'open', 4, 6)
     cave((0, 3), 3, 3, (5, 1), 'bomb', 4, 6)
     sign((1, 1), 2, 4, 'frostsign')
     # ---- Crater
-    gate((7, 1), 4, 2, 6)
+    gate((7, 1), 4, 3, 6)
     npc((6, 2), 'ember', 4, 3)
     sign((6, 1), 2, 4, 'cratersign')
     return used, avoid, ents, interior_back, gates
@@ -759,7 +760,7 @@ def build_dungeon1():
     en = lambda name: ('.', 'en %s {x} {y}' % name)
     R(1, 3, ["P......P", "........", "..I..I..", "..1..2..", "........", "........"],
       {'N': 'open', 'E': 'open', 'S': 'D'}, {'1': en('blobbo'), '2': en('blobbo')},
-      ['warp 4 7 0 4 4 5 3', 'sign 4 5 d1sign'] if False else ['warp 4 7 0 4 4 5 3'])
+      ['warp 4 7 0 4 4 6 4', 'sign 4 5 d1sign'] if False else ['warp 4 7 0 4 4 6 4'])
     R(2, 3, ["P.P..P.P", "........", "........", "........", ".5....6.", "...7...."],
       {'W': 'open'}, {'5': en('flutterbug'), '6': en('flutterbug'), '7': ('C', 'chest {x} {y} gems:20 17')}, [])
     R(1, 2, ["..P..P..", ".o....o.", "...II...", "...II...", ".o.12.o.", "........"],
@@ -797,7 +798,7 @@ def build_dungeon2():
         (gx, gy), dungeon_room(gx, gy, reg, interior, opens, marks, extras))
     en = lambda name: ('.', 'en %s {x} {y}' % name)
     R(2, 3, ["P......P", "........", "..1..2..", "........", "..I..I..", "........"],
-      {'N': 'open', 'W': 'open', 'S': 'D'}, {'1': en('crabby'), '2': en('sandmole')}, ['warp 4 7 0 7 5 4 3'])
+      {'N': 'open', 'W': 'open', 'S': 'D'}, {'1': en('crabby'), '2': en('sandmole')}, ['warp 4 7 0 7 5 4 4'])
     R(1, 3, ["P.P..P.P", "........", "...1....", "........", ".2....3.", "P.C....P"],
       {'E': 'open'}, {'1': en('sandmole'), '2': en('crabby'), '3': en('crabby'), 'C': ('C', 'chest {x} {y} gems:20 3')}, [])
     R(2, 2, ["..P..P..", "........", ".I....I.", "........", "...1.2..", "........"],

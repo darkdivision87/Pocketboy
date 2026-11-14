@@ -416,7 +416,7 @@ final class FluffWorld {
             let sz: Float = 0.8 + Float(rng.unit()) * 0.6
             switch r {
             case 0:
-                if roll < 70 { addProp(FluffKind.tree, rng.int(2), sz, x, y, r) }
+                if roll < 18 { addProp(FluffKind.tree, rng.int(2), sz, x, y, r) }
                 else if roll < 95 { addProp(FluffKind.blossom, rng.int(2), sz, x, y, r) }
                 else if roll < 103 { addProp(FluffKind.hive, 0, sz, x, y, r) }
                 else if roll < 150 { addProp(FluffKind.bush, 0, sz, x, y, r) }
@@ -424,7 +424,7 @@ final class FluffWorld {
                 else if roll < 195 { addProp(FluffKind.mushroom, rng.int(3), sz * 0.8, x, y, r) }
                 else if roll < 330 { addFlowers(&rng, x, y, r) }
             case 1:
-                if roll < 85 { addProp(FluffKind.palm, rng.int(2), sz, x, y, r) }
+                if roll < 30 { addProp(FluffKind.palm, rng.int(2), sz, x, y, r) }
                 else if roll < 125 { addProp(FluffKind.shells, 0, sz, x, y, r) }
                 else if roll < 145 { addProp(FluffKind.rock, 2, sz * 0.8, x, y, r) }
                 else if roll < 200 { addFlowers(&rng, x, y, r) }

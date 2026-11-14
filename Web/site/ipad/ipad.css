@@ -63,3 +63,12 @@ body.ipad.scheme-swipe .ab { opacity: calc(var(--ctl-op) * .5); }
 body.ipad .ripple { position: absolute; z-index: 3; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 4px solid rgba(255,255,255,.85); pointer-events: none; animation: ripple .5s ease-out forwards; }
 @keyframes ripple { from { transform: scale(.4); opacity: 1; } to { transform: scale(3.4); opacity: 0; } }
 body.ipad.scheme-touch .ab { opacity: calc(var(--ctl-op) * .35); }
+
+/* Full screen: the game takes the whole display, controls float over it */
+body.ipad.immersive .screen-wrap { top: var(--sat); height: calc(100dvh - var(--sat) - var(--sab)); width: calc((100dvh - var(--sat) - var(--sab)) / .9); max-width: 100vw; border: 0; border-radius: 0; box-shadow: none; }
+@media (orientation: portrait) {
+  body.ipad.immersive .screen-wrap { --sh: calc(100vw * .9); top: 50%; transform: translate(-50%, -50%); height: var(--sh); width: 100vw; }
+}
+body.ipad.immersive .brand { display: none; }
+body.ipad.immersive .topbar { opacity: .75; }
+body.ipad.immersive #console { background: #000; }

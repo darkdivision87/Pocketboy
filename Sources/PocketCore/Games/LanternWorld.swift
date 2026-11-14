@@ -73,7 +73,7 @@ import Glibc
 //      warp back to the overworld landing tile in front of the gate ("gate" entity already placed on the overworld), a boss
 //      (LanternContent.bosses) and a unique item registered in LanternContent.items.
 //   2. Add `LanternDungeon3.make()` to `LanternContent.dungeons` below. Done; the overworld gate opens by itself.
-//   3. Run LanternValidator.validate() (it must return []) and Tools/lantern/validate.py.
+//   3. Run LanternValidator.validate() (it must return []) and Tools/lantern/build_world.py --check (it simulates keys, items and puzzles).
 //
 // ADDING AN ITEM: append a LanternItem to LanternContent.items with a unique `bit` (0...63; 8...15 are reserved for hookshot,
 // flippers, hammer, ...). Its `use` closure receives the game and may call the helper methods of LanternQuest (spawnProjectile etc).

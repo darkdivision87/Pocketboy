@@ -2400,14 +2400,16 @@ final class Fluffwood64: Game {
 
     // MARK: - UI drawing
 
-    private func uiText(_ pt: FluffPainter, _ s: String, _ x: Int, _ y: Int, _ c: UInt32, _ scale: Int) {
+    private func uiText(_ pt: FluffPainter, _ s: String, _ x: Int, _ y: Int, _ c: UInt32, _ scale0: Int) {
+        let scale: Int = max(2, scale0)
         pt.text(s, x + scale, y + scale, Fluffwood64.cShadow, scale)
         pt.text(s, x, y, c, scale)
     }
 
     private func uiTextCentered(_ pt: FluffPainter, _ s: String, _ cx: Int, _ y: Int, _ c: UInt32, _ scale: Int) {
-        let wpx: Int = s.count * 4 * scale - scale
-        uiText(pt, s, cx - wpx / 2, y, c, scale)
+        let sc: Int = max(2, scale)
+        let wpx: Int = s.count * 4 * sc - sc
+        uiText(pt, s, cx - wpx / 2, y, c, sc)
     }
 
     private func wrapText(_ s: String, _ maxChars: Int) -> [String] {
@@ -2605,7 +2607,7 @@ final class Fluffwood64: Game {
             let rel: Float = FluffMath.wrapAngle(d.0 - heading)
             if abs(rel) < 1.2 {
                 let x: Int = cx + FluffMath.i(rel / 1.2 * half)
-                pt.text(d.1, x - 2, 10, Fluffwood64.cInk, 1)
+                pt.text(d.1, x - 3, 6, Fluffwood64.cInk, 2)
             }
         }
         pt.rect(cx - 1, 20, 3, 2, Fluffwood64.cPink)
@@ -2742,12 +2744,12 @@ final class Fluffwood64: Game {
         for (i, l) in rn.enumerated() { uiText(pt, l, 158, 84 + i * 12, TrueColorBuffer.rgb(90, 160, 120), 2) }
         pt.drawTreat(sp.treat, 166, 120, 6)
         uiText(pt, "LOVES " + FluffSpecies.treatNames[sp.treat], 178, 114, Fluffwood64.cInk, 1)
-        uiText(pt, "TIME: " + ["ANYTIME", "DAYTIME", "NIGHT", "DAWN/DUSK"][sp.time], 158, 130, TrueColorBuffer.rgb(120, 110, 160), 1)
+        uiText(pt, "TIME: " + ["ANYTIME", "DAYTIME", "NIGHT", "DAWN/DUSK"][sp.time], 158, 127, TrueColorBuffer.rgb(120, 110, 160), 1)
         for l in 0..<5 {
             let col: UInt32 = l < lv ? Fluffwood64.cPink : TrueColorBuffer.rgb(222, 214, 236)
             pt.heart(166 + l * 16, 148, 9, col)
         }
-        uiText(pt, "LEVEL " + String(lv), 158, 158, Fluffwood64.cInk, 1)
+        uiText(pt, "LEVEL " + String(lv), 158, 160, Fluffwood64.cInk, 2)
         let lines = wrapText(sp.fact, 32)
         for (i, l) in lines.enumerated() where i < 4 {
             uiTextCentered(pt, l, 160, 176 + i * 14, Fluffwood64.cInk, 2)
@@ -2768,8 +2770,7 @@ final class Fluffwood64: Game {
             pt.roundRect(24, y, 272, 18, 7, done ? TrueColorBuffer.rgb(255, 244, 190) : TrueColorBuffer.rgb(240, 236, 252), 255)
             pt.star(36, y + 9, 6, done ? Fluffwood64.cGold : TrueColorBuffer.rgb(206, 198, 224))
             pt.ell(36, y + 9, 3, 3, done ? Fluffwood64.cGold : TrueColorBuffer.rgb(206, 198, 224))
-            uiText(pt, Fluffwood64.goalTitles[g], 48, y + 2, Fluffwood64.cInk, 1)
-            uiText(pt, Fluffwood64.goalRewards[g], 48, y + 10, TrueColorBuffer.rgb(150, 120, 180), 1)
+            uiText(pt, Fluffwood64.goalTitles[g], 48, y + 4, Fluffwood64.cInk, 2)
             var prog: String = done ? "OK" : ""
             if !done {
                 let n = caughtCount()
@@ -2778,7 +2779,7 @@ final class Fluffwood64: Game {
                 else if g == 2 { prog = String(min(n, 15)) + "/15" }
                 else if g == 7 { prog = String(min(n, 20)) + "/20" }
             }
-            uiText(pt, prog, 262, y + 5, Fluffwood64.cInk, 1)
+            uiText(pt, prog, 250, y + 4, Fluffwood64.cInk, 2)
         }
         pt.roundRect(24, 224, 272, 22, 9, TrueColorBuffer.rgb(214, 238, 255), 255)
         uiTextCentered(pt, "< HAT: " + Fluffwood64.hatNames[max(0, min(5, hat))] + " >", 160, 230, Fluffwood64.cInk, 2)
@@ -2819,13 +2820,13 @@ final class Fluffwood64: Game {
         uiTextCentered(pt, sp.name, 160, 186, Fluffwood64.cInk, 3)
         pt.drawTypeIcon(sp.type, 98, 214, 7)
         uiText(pt, FluffSpecies.typeNames[sp.type] + " / " + FluffSpecies.rarityNames[sp.rarity], 110, 211, Fluffwood64.typeColors[sp.type], 1)
-        let lines = wrapText(sp.fact, 30)
+        let lines = wrapText(sp.fact, 36)
         for (k, l) in lines.enumerated() where k < 3 {
             uiTextCentered(pt, l, 160, 222 + k * 11, Fluffwood64.cInk, 1)
         }
         if cardLevelUp { uiTextCentered(pt, "LEVEL UP!", 160, 62, Fluffwood64.cGold, 2) }
         if cardT > 30 && (cardT / 20) % 2 == 0 {
-            uiTextCentered(pt, "A / TAP: CONTINUE", 160, 248, TrueColorBuffer.rgb(150, 110, 190), 1)
+            uiTextCentered(pt, "A / TAP: CONTINUE", 160, 270, TrueColorBuffer.rgb(150, 110, 190), 1)
         }
     }
 }

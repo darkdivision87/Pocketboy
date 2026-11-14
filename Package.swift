@@ -20,7 +20,11 @@ let wipFiles: [String] = [
     "Games/LanternAudio.swift",
     "Games/LanternSave.swift",
     "Games/LanternArt.swift",
-    "Games/LanternWorld.swift"
+    "Games/LanternWorld.swift",
+    "Games/LanternDungeon1.swift",
+    "Games/LanternDungeon2.swift",
+    "Games/LanternInteriors.swift",
+    "Games/LanternOverworld.swift"
 ]
 
 let package = Package(

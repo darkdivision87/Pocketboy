@@ -14,7 +14,7 @@
   const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? Object.assign({}, d, JSON.parse(v)) : d; } catch (e) { return d; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
 
-  const ui = load('pb.ipad', { lefty: false, size: 1, op: 0.8 });
+  const ui = load('pb.ipad', { lefty: false, size: 1, op: 0.8, full: true });
   const profiles = load('pb.ipad.ctl', {});
   let cart = null;
   let scheme = 'stick';
@@ -38,6 +38,20 @@
   document.getElementById('segSize').addEventListener('click', (e) => { const v = e.target.dataset && e.target.dataset.v; if (v) { ui.size = Number(v); applyUi(); } });
   document.getElementById('segOp').addEventListener('click', (e) => { const v = e.target.dataset && e.target.dataset.v; if (v) { ui.op = Number(v); applyUi(); } });
   applyUi();
+
+  // ---------- full screen (game fills the whole iPad; also asks Safari for real fullscreen where allowed) ----------
+  function applyFull(playing) {
+    body.classList.toggle('immersive', !!ui.full && playing);
+    const box = document.getElementById('optFull');
+    if (box) box.checked = !!ui.full;
+    const el = document.documentElement;
+    try {
+      if (ui.full && playing) { const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f && !document.fullscreenElement && !document.webkitFullscreenElement) { const r = f.call(el); if (r && r.catch) r.catch(() => {}); } }
+      else if (document.fullscreenElement || document.webkitFullscreenElement) { const x = document.exitFullscreen || document.webkitExitFullscreen; if (x) { const r = x.call(document); if (r && r.catch) r.catch(() => {}); } }
+    } catch (err) { /* fullscreen is optional */ }
+  }
+  let playingNow = false;
+  document.getElementById('optFull').addEventListener('change', (e) => { ui.full = e.target.checked; applyUi(); applyFull(playingNow); });
 
   // ---------- per-game control profile ----------
   const wantsTouch = () => !!(window.pb && window.pb.wantsPointer);
@@ -206,8 +220,8 @@
     hint.classList.add('show');
     setTimeout(() => hint.classList.remove('show'), 5500);
   }
-  window.addEventListener('pb-play', (e) => { cart = e.detail; clearAll(); applyProfile(); showHint(); });
-  window.addEventListener('pb-eject', () => { cart = null; clearAll(); });
+  window.addEventListener('pb-play', (e) => { playingNow = true; applyFull(true); cart = e.detail; clearAll(); applyProfile(); showHint(); });
+  window.addEventListener('pb-eject', () => { playingNow = false; applyFull(false); cart = null; clearAll(); });
   window.addEventListener('pb-menu', (e) => { clearAll(); if (e.detail) applyProfile(); });
   window.addEventListener('blur', clearAll);
 })();

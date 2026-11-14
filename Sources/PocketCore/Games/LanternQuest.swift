@@ -141,3 +141,11 @@ final class LanternQuest: Game {
         }
     }
 }
+
+extension Cartridge {
+    static let lanternQuest = Cartridge(
+        id: "lanternquest", title: "LANTERN QUEST", genre: "Adventure RPG",
+        blurb: "The valley's great lantern has gone out and its six Sparks have scattered. Explore a big overworld, win two dungeons, find secrets, help villagers and wake the light again. Touch the screen to walk and tap to swing.",
+        controls: "D-PAD or touch to walk, A sword/talk, B item, SELECT items, START map.",
+        era: .gbc, labelTop: 0xF8C848, labelBottom: 0x2A2058, factory: { LanternQuest() })
+}
