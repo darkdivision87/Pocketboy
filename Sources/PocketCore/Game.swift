@@ -73,7 +73,7 @@ public struct Rng {
     public mutating func chance(_ percent: Int) -> Bool { return int(100) < percent }
 
     /// 0..<1
-    public mutating func unit() -> Double { return Double(next() >> 11) / Double(1 << 53) }
+    public mutating func unit() -> Double { return Double(next() >> 11) / 9007199254740992.0 }
 }
 
 /// Integer rectangle helper for collisions.

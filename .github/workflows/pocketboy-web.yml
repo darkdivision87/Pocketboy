@@ -44,6 +44,8 @@ jobs:
 
       - name: Build wasm module
         working-directory: Web
+        env:
+          PB_KEEP_SYMBOLS: ${{ github.ref != 'refs/heads/main' && '1' || '' }}
         run: |
           swift build --swift-sdk "$WASM_SDK_ID" -c release --product PocketWeb -Xswiftc -Osize
           find .build -name 'PocketWeb.wasm' -print
