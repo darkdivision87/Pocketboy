@@ -338,12 +338,12 @@ export class World {
     spriteOf(c, 1.4, 0.7, 0, 2.5, 0.2, g);
   }
   _b_start(tile, g) {
-    const y = SLAB_H; const lab = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.0), new THREE.MeshStandardMaterial({ map: makeTexture(THREE, labelCanvas('START', '#7ad86a', '#ffffff', 512, 214), {}), roughness: 0.6 })); lab.rotation.x = -Math.PI / 2; lab.position.set(0, y + 0.01, -0.6); lab.receiveShadow = true; g.add(lab);
+    const y = SLAB_H; const lab = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.0), new THREE.MeshStandardMaterial({ map: makeTexture(THREE, labelCanvas('START', '#7ad86a', '#ffffff', 512, 214), {}), roughness: 0.6 })); lab.rotation.x = -Math.PI / 2; lab.position.set(0, y + 0.01, -0.35); lab.receiveShadow = true; g.add(lab);
     const arrow = new THREE.Shape(); arrow.moveTo(-0.8, -0.2); arrow.lineTo(0.2, -0.2); arrow.lineTo(0.2, -0.5); arrow.lineTo(0.9, 0); arrow.lineTo(0.2, 0.5); arrow.lineTo(0.2, 0.2); arrow.lineTo(-0.8, 0.2); const am = new THREE.Mesh(new THREE.ShapeGeometry(arrow), std(0xffffff, 0.5)); am.rotation.x = -Math.PI / 2; am.rotation.z = Math.PI; am.position.set(0, y + 0.012, 0.45); g.add(am);
-    const pil = std(0xffd93b, 0.4); for (const sx of [-1.15, 1.15]) { C(g, 0.12, 1.9, pil, sx, y + 0.95, 1.05); S(g, 0.28, std(sx < 0 ? 0xff5a7a : 0x4fb4f0, 0.3), sx, y + 2.1, 1.05); }
-    B(g, 2.6, 0.32, 0.2, std(0xff5a7a, 0.4), 0, y + 1.9, 1.05); this.startBanner = spriteOf(labelCanvas('START', '#00000000', '#fff', 256, 80), 1.9, 0.6, 0, y + 1.9, 1.2, g);
+    const pil = std(0xffd93b, 0.4); for (const sx of [-1.15, 1.15]) { C(g, 0.12, 1.9, pil, sx, y + 0.95, -1.2); S(g, 0.28, std(sx < 0 ? 0xff5a7a : 0x4fb4f0, 0.3), sx, y + 2.1, -1.2); }
+    B(g, 2.6, 0.32, 0.2, std(0xff5a7a, 0.4), 0, y + 1.9, -1.2);
     // coin pile
-    tile.mark = spriteOf(glyphCanvas('coin', 128), 0.9, 0.9, 0, 2.9, 1.05, g);
+    tile.mark = spriteOf(glyphCanvas('coin', 128), 0.9, 0.9, 0, 2.9, -1.2, g);
   }
   _b_park(tile, g) {
     const y = SLAB_H; const bl = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshStandardMaterial({ map: (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); for (let a = 0; a < 8; a++) for (let b = 0; b < 8; b++) { x.fillStyle = (a + b) % 2 ? '#ff6a6a' : '#fff'; x.fillRect(a * 16, b * 16, 16, 16); } return makeTexture(THREE, c); })(), roughness: 0.9 })); bl.rotation.x = -Math.PI / 2; bl.rotation.z = 0.3; bl.position.set(0.5, y + 0.012, 0.5); g.add(bl);

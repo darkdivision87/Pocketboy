@@ -74,7 +74,7 @@ const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerW
 composer.setPixelRatio(DPR);
 composer.setSize(innerWidth, innerHeight);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.42, 0.55, 1.05);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.36, 0.5, 1.05);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 let bloomOn = true;
@@ -917,8 +917,8 @@ function startGame() {
   sfx('click'); playTheme('action', 0.4);
 }
 function toTitle() { state = 'title'; resetRun(); $('hud').classList.add('hidden'); showScreen('title'); updateTitleStats(); setupDemo(); playTheme('action', 0.22); }
-function pauseGame() { if (state !== 'playing') return; state = 'paused'; showScreen('pause'); try { music.duck(0.4, 99); } catch (e) { /* ignore */ } fireBtnDown = false; pts.clear(); $('fireBtn').classList.remove('down'); sfx('click'); }
-function resumeGame() { if (state !== 'paused') return; state = 'playing'; showScreen(''); try { music.duck(1, 0.1); } catch (e) { /* ignore */ } sfx('click'); }
+function pauseGame() { if (state !== 'playing') return; state = 'paused'; showScreen('pause'); try { music.pause(); } catch (e) { /* ignore */ } fireBtnDown = false; pts.clear(); $('fireBtn').classList.remove('down'); sfx('click'); }
+function resumeGame() { if (state !== 'paused') return; state = 'playing'; showScreen(''); try { music.resume(); } catch (e) { /* ignore */ } sfx('click'); }
 function gameOver() {
   state = 'over'; overT = 1.6; run.over = true; setTimeout(() => { if (state === 'over' && !shopOpen()) showOver(); }, 1500); fireBtnDown = false; pts.clear(); $('fireBtn').classList.remove('down');
   if (run.score > save.best) save.best = run.score; if (run.wave > save.bestWave) save.bestWave = run.wave; persist(); sfx('lose'); playTheme('calm', 0.2); $('hint').classList.remove('on'); $('bossBox').classList.remove('on'); $('bubble').classList.remove('on');
@@ -989,6 +989,7 @@ addEventListener('keyup', (e) => { keys[e.code] = false; });
 for (const ev of ['contextmenu', 'gesturestart', 'gesturechange', 'dblclick', 'selectstart']) document.addEventListener(ev, (e) => e.preventDefault());
 document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+addEventListener('pointerdown', () => { try { music.unlock(); if (state === 'title' && !curTheme) playTheme('action', 0.22); } catch (e) { /* ignore */ } }, { capture: true });
 
 // buttons
 const press = (id, fn) => { const b = $(id); b.addEventListener('click', (e) => { try { music.unlock(); } catch (er) { /* ignore */ } fn(e); }); };
@@ -1009,7 +1010,7 @@ function renderShop() {
     const W = WEAPONS[k], lv = save.lv[k], locked = lv === 0, lvi = Math.max(0, lv - 1);
     const d = document.createElement('div'); d.className = 'card' + (locked ? ' locked' : '') + (save.eq === k ? ' eq' : '');
     const pw = (W.dmg[lvi] * W.pel[lvi] + (W.aoe[lvi] ? 2 : 0)) / 8, sp = (1 / W.rate[lvi]) / 8;
-    d.innerHTML = `<div class="gi">${gunSvg(W.hex, locked)}</div><h3>${W.name}</h3><div class="d">${W.desc}</div><div class="stat"><span>Power</span><div class="bar"><i style="transform:scaleX(${clamp(pw, 0.08, 1)})"></i></div></div><div class="stat"><span>Speed</span><div class="bar"><i style="transform:scaleX(${clamp(sp * 2.4, 0.08, 1)})"></i></div></div><div class="pips">${[1, 2, 3].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('')}</div>`;
+    d.innerHTML = `<div class="gi">${gunSvg(W.hex, locked)}</div><h3>${W.name}</h3><div class="d">${W.desc}</div><div class="stat"><span>Power</span><div class="bar"><i style="transform:scaleX(${clamp(pw, 0.08, 1)})"></i></div></div><div class="stat"><span>Speed</span><div class="bar"><i style="transform:scaleX(${clamp(sp, 0.08, 1)})"></i></div></div><div class="pips">${[1, 2, 3].map((i) => `<i class="${i <= lv ? 'on' : ''}"></i>`).join('')}</div>`;
     const main = document.createElement('button'); main.className = 'btn ' + (locked ? 'pink' : 'blue');
     const star = '<svg viewBox="0 0 32 32"><path d="M16 2l4.2 9 9.8 1.1-7.3 6.7 2 9.7L16 23.6 7.3 28.5l2-9.7L2 12.1 11.8 11z"/></svg>';
     if (locked) { main.innerHTML = `Unlock ${star}${W.unlock}`; main.disabled = save.stars < W.unlock; main.onclick = () => { if (save.stars >= W.unlock) { save.stars -= W.unlock; save.lv[k] = 1; save.eq = k; persist(); sfx('powerup'); renderShop(); } }; }
@@ -1028,7 +1029,7 @@ function resize() {
   const w = innerWidth, h = innerHeight; renderer.setSize(w, h); composer.setSize(w, h); bloom.setSize(w / 2, h / 2);
   camera.aspect = w / h; const portrait = h > w;
   camera.fov = portrait ? clamp(2 * Math.atan(Math.tan(0.62) / camera.aspect) * 180 / Math.PI, 70, 100) : 66; camera.updateProjectionMatrix();
-  for (const k of WKEYS) guns[k].position.set(portrait ? 0.24 : 0.3, portrait ? -0.34 : -0.3, portrait ? -0.62 : -0.55);
+  for (const k of WKEYS) { guns[k].position.set(portrait ? 0.2 : 0.3, portrait ? -0.34 : -0.3, portrait ? -0.62 : -0.55); guns[k].scale.setScalar(portrait ? 0.5 : 0.7); }
 }
 addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 200));
 
@@ -1053,7 +1054,7 @@ function frame(now) {
   camera.rotation.set(pitch + 0.0035 * Math.sin(tAll * 0.9 + 1) + (Math.random() - 0.5) * sh * 0.08, yaw + (Math.random() - 0.5) * sh * 0.08, (Math.random() - 0.5) * sh * 0.06);
   camera.position.set((Math.random() - 0.5) * sh * 0.25, CAMY + (Math.random() - 0.5) * sh * 0.25 + (state === 'title' ? 0 : 0), 0);
   // gun anim
-  if (gun) { kick = Math.max(0, kick - dt * 9); const bx = Math.sin(tAll * 1.7) * 0.004, by = Math.sin(tAll * 2.3) * 0.004; const portrait = innerHeight > innerWidth; gun.position.z = (portrait ? -0.62 : -0.55) + kick * 0.09; gun.position.y = (portrait ? -0.34 : -0.3) + by + kick * 0.01; gun.position.x = (portrait ? 0.24 : 0.3) + bx; gun.rotation.x = kick * 0.12; }
+  if (gun) { kick = Math.max(0, kick - dt * 9); const bx = Math.sin(tAll * 1.7) * 0.004, by = Math.sin(tAll * 2.3) * 0.004; const portrait = innerHeight > innerWidth; gun.position.z = (portrait ? -0.62 : -0.55) + kick * 0.09; gun.position.y = (portrait ? -0.34 : -0.3) + by + kick * 0.01; gun.position.x = (portrait ? 0.2 : 0.3) + bx; gun.rotation.x = kick * 0.12; }
   if (flashT > 0) { flashT -= dt; if (flashT <= 0) flash.visible = false; if (gun) { gun.userData.muzzle.getWorldPosition(tmpA); camera.worldToLocal(tmpA); flash.position.copy(tmpA); } }
   sun.position.set(-16, 30, 12);
   if (!bloomOn) renderer.render(scene, camera); else composer.render();

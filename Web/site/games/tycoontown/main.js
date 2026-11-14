@@ -243,7 +243,7 @@ function drawWheel(cv) {
   PRIZES.forEach((pz, i) => {
     const a0 = -Math.PI / 2 - seg / 2 + i * seg; c.beginPath(); c.moveTo(m, m); c.arc(m, m, m - 6, a0, a0 + seg); c.closePath(); c.fillStyle = pz.c; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 6; c.stroke();
     c.save(); c.translate(m, m); c.rotate(a0 + seg / 2 + Math.PI / 2); c.fillStyle = '#fff'; c.font = '900 56px ui-rounded, system-ui, sans-serif'; c.textAlign = 'center'; c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 0; c.shadowOffsetY = 4;
-    if (pz.g) { glyph(c, pz.g, 0, -m * 0.62, 56); c.font = '900 34px ui-rounded, system-ui, sans-serif'; c.fillText(pz.l, 0, -m * 0.36); } else { c.fillText(pz.l, 0, -m * 0.55); }
+    if (pz.g) { glyph(c, pz.g, 0, -m * 0.7, 52); c.font = '900 30px ui-rounded, system-ui, sans-serif'; c.fillText(pz.l, 0, -m * 0.47); } else { c.fillText(pz.l, 0, -m * 0.55); }
     c.restore();
   });
   c.beginPath(); c.arc(m, m, m - 3, 0, 7); c.lineWidth = 12; c.strokeStyle = '#ffc61a'; c.stroke();
@@ -362,7 +362,7 @@ async function drawCard(p, depth) {
 
 async function takeTurn(p) {
   setCurrent(p); setIntensity(0.5); await T.wait(0.35); updateTownBadge();
-  if (p.nap > 0) { p.nap--; banner(`${p.human ? 'You are' : p.name + ' is'} napping… Zzz`, '#8a96ff', p.av); sfx('calm'); await T.wait(1.4); return; }
+  if (p.nap > 0) { p.nap--; banner(`${p.human ? 'You are' : p.name + ' is'} napping… Zzz`, '#8a96ff', p.av); sfx('squeak'); await T.wait(1.4); return; }
   banner(p.human ? 'Your turn!' : `${p.name}'s turn`, p.css, p.av); await T.wait(0.8);
   let doubles = 0;
   for (;;) {
@@ -486,7 +486,7 @@ function launch(cfg) {
   buildPlayers(); buildTopButtons(); updateGoalbar(); hud.classList.remove('hidden'); G.players.forEach((p) => { p.cashEl.textContent = money(p.cash); });
   world.setMode('follow'); world.view.zoomOut = true; world.view.tYaw = yawForTile(0); setCurrent(G.players[0]); G.players.forEach((q) => (q.el.classList.remove('cur')));
   window.__tt.G = G;
-  const run = G.run; (async () => { banner(bonus ? `Let's play! +${money(bonus)} daily bonus` : "Let's play!", '#4fb4f0', me); await T.wait(1.2); world.view.zoomOut = false; await T.wait(0.8); if (G.run === run) gameLoop(run); })();
+  const run = G.run; (async () => { banner(bonus ? `Let's play! +${money(bonus)} daily bonus` : "Let's play!", '#4fb4f0', me); await T.wait(1.3); banner(`First to ${money(G.goal)} wins!`, '#ff9a3c'); world.view.zoomOut = false; await T.wait(1.4); if (G.run === run) gameLoop(run); })();
 }
 
 // ---------- input ----------
@@ -496,7 +496,7 @@ cv.addEventListener('pointerdown', (e) => { ptr = { x: e.clientX, y: e.clientY, 
 cv.addEventListener('pointerup', (e) => {
   if (!ptr) return; const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y, dt = performance.now() - ptr.t, dist = Math.hypot(dx, dy); ptr = null;
   if (!G || modalEl.classList.contains('show')) return;
-  if (rollResolve && dist > 80 && dt < 700) { doRoll(Math.min(1.4, 0.8 + dist / 500)); return; }
+  if (rollResolve && dist > 80 && dt < 1600) { doRoll(Math.min(1.4, 0.8 + dist / 500)); return; }
   if (dist < 14 && dt < 500) { const i = world.pick(e.clientX, e.clientY); if (i >= 0) tapInfo(i); }
 });
 rollBtn.addEventListener('click', () => doRoll(1));

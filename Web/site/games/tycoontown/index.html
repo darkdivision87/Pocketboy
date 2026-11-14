@@ -111,12 +111,11 @@ svg{display:block}
 #title{position:fixed;inset:0;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;padding:calc(var(--sat) + 1rem) 1rem calc(var(--sab) + 1rem);background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,0) 30%,rgba(60,120,200,.28) 100%)}
 .logo{text-align:center;line-height:.86;font-weight:900;filter:drop-shadow(0 .5rem 0 rgba(43,47,90,.35))}
 .logo .l1{font-size:5.6rem;letter-spacing:.02em;color:#ffd93b;background:linear-gradient(#fff6a8 10%,#ffd22b 45%,#ff9f1c 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;-webkit-text-stroke:.5rem var(--ink);paint-order:stroke fill;position:relative}
-.logo .l1:after{content:attr(data-t);position:absolute;left:0;top:0;right:0;-webkit-text-fill-color:transparent;-webkit-text-stroke:0;background:inherit}
 .logo .l2{font-size:4rem;letter-spacing:.25em;margin-left:.25em;color:#fff;-webkit-text-stroke:.4rem var(--ink);paint-order:stroke fill;text-shadow:0 .25rem 0 var(--ink);transform:rotate(-2deg)}
-.logo small{display:block;margin-top:.9rem;font-size:1.2rem;color:#fff;letter-spacing:.12em;text-shadow:0 .1rem 0 rgba(43,47,90,.7),0 0 .8rem rgba(43,47,90,.5);font-weight:900}
+.logo small{display:inline-block;margin-top:1rem;padding:.35rem 1.1rem;border-radius:2rem;background:rgba(43,47,90,.62);font-size:1.05rem;color:#fff;letter-spacing:.12em;font-weight:900;white-space:nowrap}
 #tmenu{display:flex;flex-direction:column;gap:.9rem;align-items:center;margin-top:.5rem}
 #trow{display:flex;gap:.9rem}
-#trow .btn{min-width:7.5rem;position:relative}
+#trow .btn{min-width:7.5rem;position:relative;white-space:nowrap}
 .dot{position:absolute;right:-.3rem;top:-.4rem;width:1.5rem;height:1.5rem;border-radius:50%;background:#ff4b5c;border:.15rem solid #fff;animation:pulse2 1s infinite}
 @keyframes pulse2{50%{transform:scale(1.25)}}
 /* setup */
@@ -178,6 +177,14 @@ svg{display:block}
  #goalbar{top:calc(var(--sat) + 4.9rem);font-size:.8rem;padding:.35rem .8rem;gap:.5rem}
  #tbtns{gap:.35rem}.rb{width:3.3rem;height:3.3rem}
  .logo .l1{font-size:4.2rem}.logo .l2{font-size:3rem}
+}
+@media (max-width:600px){
+ #tbtns{flex-direction:column;gap:.5rem}
+ #goalbar{left:auto;right:calc(var(--sar) + 4.9rem);top:calc(var(--sat) + .8rem);transform:none;flex-direction:column;align-items:flex-end;gap:.05rem;padding:.4rem .8rem;border-radius:1.2rem;font-size:.82rem}
+ .pc.cur{transform:scale(1.04)}
+ .av{width:4.7rem}.av canvas{width:3.4rem;height:3.4rem}
+ .btn{min-width:7rem;padding:.5rem 1.1rem}.btn.big{padding:.6rem 1.6rem}
+ .sheet{padding:1.1rem 1rem}
 }
 @media (max-height:520px){#roll{width:6.5rem;height:6.5rem}#hint{bottom:calc(var(--sab) + 8rem)}}
 </style>

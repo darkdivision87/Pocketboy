@@ -163,11 +163,19 @@ svg{display:block}
 .card .btn{min-height:56px;padding:0 20px;font-size:clamp(16px,2.6vmin,22px);width:100%}
 @media (orientation:portrait){
   #cards{flex-direction:column}
-  .card{flex-direction:row;flex-wrap:wrap;justify-content:center}
-  .card .gi{width:34%}
+  .card{padding:10px 14px;gap:6px}
   #topC{width:min(40vw,300px)}
   #hint{white-space:normal;width:86vw}
   #powers{top:calc(150px + var(--sat))}
+  .card .d{display:none}
+  .card .gi{height:56px}
+}
+@media (max-width:520px){
+  #hearts{padding:6px 10px}#hearts svg{width:22px;height:22px}
+  #scoreBox{font-size:18px;padding:4px 14px}
+  #topC{top:calc(122px + var(--sat));width:72vw}
+  #powers{top:calc(250px + var(--sat))}
+  #topR{gap:8px}
 }
 #toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:30;padding:10px 24px;font-size:clamp(18px,3vmin,26px);display:none}
 </style>
