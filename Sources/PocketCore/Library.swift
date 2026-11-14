@@ -35,6 +35,8 @@ public enum Library {
         .jetSki64,
         .robotRaid64,
         .turretZone64,
+        .turboFox64,
+        .railRunner64,
         .pocketPong
     ]
 

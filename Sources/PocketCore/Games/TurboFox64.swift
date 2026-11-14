@@ -1112,6 +1112,69 @@ final class TurboFox64: Game {
     private var gZ1 = [Float](repeating: 0, count: TurboFox64.drawN)
 
     override var score: Int { return max(0, pts) }
+    override var wantsPointer: Bool { return true }
+
+    struct TapT {
+        var seg: Int
+        var idx: Int
+        var sx: Int
+        var sy: Int
+    }
+
+    private var tapTargets: [TapT] = []
+    private var tStartFrame = 0
+    private var tStartX = 0
+    private var tStartY = 0
+    private var tMove = 0
+    private var tBottom = false
+    private var touchSteer = false
+    private var touchX = 160
+    private var tapAimSeg = -1
+    private var tapAimIdx = -1
+
+    private func processTouch(_ raw: InputState) -> InputState {
+        var inp = raw
+        let ptr = raw.pointer
+        tapAimSeg = -1
+        tapAimIdx = -1
+        touchSteer = false
+        if ptr.pressed {
+            tStartFrame = frame
+            tStartX = ptr.x
+            tStartY = ptr.y
+            tMove = 0
+            tBottom = ptr.y >= 216
+        }
+        if ptr.down {
+            let m = max(abs(ptr.x - tStartX), abs(ptr.y - tStartY))
+            if m > tMove { tMove = m }
+        }
+        if phase == .run {
+            if ptr.down && ptr.y >= 216 {
+                inp.held.insert(.b)
+            } else if ptr.down {
+                touchSteer = true
+                touchX = ptr.x
+            }
+            if ptr.released && !tBottom && frame - tStartFrame <= 15 && tMove < 16 {
+                inp.pressed.insert(.a)
+                var best = 36 * 36
+                for t in tapTargets {
+                    let dx = t.sx - ptr.x
+                    let dy = t.sy - ptr.y
+                    let d2 = dx * dx + dy * dy
+                    if d2 < best {
+                        best = d2
+                        tapAimSeg = t.seg
+                        tapAimIdx = t.idx
+                    }
+                }
+            }
+        } else if ptr.pressed {
+            inp.pressed.insert(.a)
+        }
+        return inp
+    }
 
     override init() {
         var r = Rng()
@@ -1323,7 +1386,8 @@ final class TurboFox64: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    override func update(_ rawInput: InputState) {
+        let input = processTouch(rawInput)
         frame += 1
         if msgTimer > 0 { msgTimer -= 1 }
         if shake > 0 { shake -= 1 }
@@ -1466,6 +1530,14 @@ final class TurboFox64: Game {
             if holdFrames > 9 { steerTarget += Float(dxIn) * 0.045 }
         } else {
             if holdFrames > 9 { steerTarget = laneX(nearestLane(steerTarget)) }
+            holdFrames = 0
+        }
+        if touchSteer && dxIn == 0 && canAct {
+            var tgt: Float = (Float(touchX) - 160) / 64
+            tgt = clamp(tgt, -0.92, 0.92)
+            let near: Float = laneX(nearestLane(tgt))
+            if abs(tgt - near) < 0.2 { tgt = near }
+            steerTarget = tgt
             holdFrames = 0
         }
         steerTarget = clamp(steerTarget, -0.92, 0.92)
@@ -1672,7 +1744,13 @@ final class TurboFox64: Game {
             return
         }
         if homing { return }
-        let t = scanTarget()
+        var t = scanTarget()
+        if tapAimSeg >= 0 && tapAimSeg < course.total && tapAimIdx >= 0 && tapAimIdx < course.sprites[tapAimSeg].count {
+            let pz = pos + TurboFox64.playerDist
+            if tapAimSeg > segIndex(pz) && !course.sprites[tapAimSeg][tapAimIdx].taken {
+                t = (tapAimSeg, tapAimIdx)
+            }
+        }
         if t.0 >= 0 {
             homeSeg = t.0
             homeIdx = t.1
@@ -2313,6 +2391,7 @@ final class TurboFox64: Game {
         let roadW = TurboFox64.roadW
         lockSX = -100
         lockSY = -100
+        tapTargets.removeAll()
         var n = TurboFox64.drawN - 1
         while n >= 0 {
             defer { n -= 1 }
@@ -2334,6 +2413,11 @@ final class TurboFox64: Game {
                     blit(p, w, h, rf[fi], cx, by, gP1[n], clip, fog)
                 } else {
                     blit(p, w, h, sprs[s.kind], cx, by, gP1[n], clip, fog)
+                }
+                if (s.kind == TurboFox64.kEnemy || s.kind == TurboFox64.kFly || s.kind == TurboFox64.kSpring) && tapTargets.count < 16 {
+                    let tsx = Int(clamp(cx, -500, 800))
+                    let tsy = Int(clamp(by - gP1[n] * 200, -500, 800))
+                    tapTargets.append(TapT(seg: idx, idx: j, sx: tsx, sy: tsy))
                 }
                 if idx == lockSeg && j == lockIdx {
                     let hh: Float = gP1[n] * 200 + gP1[n] * s.h
@@ -2754,8 +2838,8 @@ final class TurboFox64: Game {
         }
         // hints
         if phase == .run && stage == 0 && stageFrames < 260 {
-            ctext(b, "LEFT RIGHT STEER   A JUMP", 232, white, 1)
-            ctext(b, "PRESS A IN THE AIR TO ATTACK", 244, yellow, 1)
+            ctext(b, "TOUCH TO STEER   TAP TO JUMP", 232, white, 1)
+            ctext(b, "TAP IN THE AIR TO ATTACK", 244, yellow, 1)
         }
     }
 
@@ -2772,7 +2856,8 @@ final class TurboFox64: Game {
             if (frame / 30) & 1 == 0 { ctext(b, "PRESS A TO RUN", 150, TurboFox64.cGreen, 3) }
             ctext(b, "LEFT RIGHT STEER   A JUMP", 176, white, 1)
             ctext(b, "A AGAIN IN AIR: HOMING ATTACK", 186, white, 1)
-            ctext(b, "B BOOST", 196, white, 1)
+            ctext(b, "B BOOST  OR HOLD LOWER SCREEN", 196, white, 1)
+            ctext(b, "TOUCH: DRAG TO STEER  TAP JUMP", 206, white, 1)
         case .ready:
             ctext(b, "STAGE " + String(stage + 1), 40, white, 4)
             ctext(b, th.name, 76, th.accent, 3)

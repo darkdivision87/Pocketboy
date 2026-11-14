@@ -939,3 +939,64 @@ extension FluffPainter {
         glow = og
     }
 }
+
+// MARK: - UI helpers
+
+extension FluffPainter {
+    func beginUI() {
+        useDepth = false
+        fog = 0
+        tr = 256
+        tg = 256
+        tb = 256
+        glow = false
+        sil = 0
+    }
+
+    func text(_ s: String, _ x: Int, _ y: Int, _ c: UInt32, _ scale: Int) {
+        let cc = col(c)
+        let sc = max(1, scale)
+        var cx = x
+        for ch in s.uppercased() {
+            let g: UInt16 = Font.glyph(ch)
+            if g != 0 && cx < w && cx + 4 * sc > 0 {
+                for row in 0..<5 {
+                    for colm in 0..<3 {
+                        if (g >> UInt16(14 - (row * 3 + colm))) & 1 == 1 {
+                            rawRect(cx + colm * sc, y + row * sc, sc, sc, cc)
+                        }
+                    }
+                }
+            }
+            cx += 4 * sc
+        }
+    }
+
+    func roundRect(_ x: Int, _ y: Int, _ rw: Int, _ rh: Int, _ r: Int, _ c: UInt32, _ alpha: Int) {
+        if alpha <= 0 || rw <= 0 || rh <= 0 { return }
+        let cc = col(c)
+        let rad = max(0, min(r, min(rw, rh) / 2))
+        for i in 0..<rh {
+            var inset = 0
+            var edge = -1
+            if i < rad { edge = rad - i - 1 } else if i >= rh - rad { edge = i - (rh - rad) }
+            if edge >= 0 {
+                let dy: Float = Float(rad - edge) - 0.5
+                let q: Float = Float(rad * rad) - dy * dy
+                let hw: Float = q > 0 ? q.squareRoot() : 0
+                inset = rad - FluffMath.i(hw)
+            }
+            let yy = y + i
+            if yy < 0 || yy >= h { continue }
+            let xa = max(0, x + inset)
+            let xb = min(w, x + rw - inset)
+            if xa >= xb { continue }
+            let base = yy * w
+            if alpha >= 256 {
+                for xx in xa..<xb { p[base + xx] = cc }
+            } else {
+                for xx in xa..<xb { p[base + xx] = blendPix(p[base + xx], cc, alpha) }
+            }
+        }
+    }
+}

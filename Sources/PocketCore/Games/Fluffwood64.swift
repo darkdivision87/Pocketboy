@@ -219,6 +219,7 @@ final class Fluffwood64: Game {
     private var sprintFrames: Int = 0
     private var camBackNow: Float = 14
     private var lastCam = FluffCam()
+    private let depthBuf: UnsafeMutablePointer<UInt16> = UnsafeMutablePointer<UInt16>.allocate(capacity: 320 * 288)
 
     // collection and progress
     private var caught = [Bool](repeating: false, count: FluffSpecies.all.count)
@@ -684,7 +685,7 @@ final class Fluffwood64: Game {
                     c.x = FluffMath.wrap(nx)
                     c.y = FluffMath.wrap(ny)
                     c.hopT += moveSpeed * 7
-                    let dxm: Float = cos(c.heading - lastCam.fx * 0)
+                    let dxm: Float = cos(c.heading) * lastCam.rx + sin(c.heading) * lastCam.ry
                     c.face = dxm >= 0 ? 1 : -1
                 } else if c.state != FluffState.flee {
                     c.state = FluffState.idle
@@ -732,10 +733,11 @@ final class Fluffwood64: Game {
         if goalBannerT > 0 { goalBannerT -= 1 }
         var inp = input
         let pt = input.pointer
-        let tapped: Bool = pt.pressed
+        var tapped: Bool = pt.pressed
         // pointer-driven synthetic buttons while playing
         if phase == .play {
             applyPointerSteering(&inp, pt, tapped)
+            if phase != .play { tapped = false }
         } else {
             ptDownPrev = pt.down
         }
@@ -835,6 +837,10 @@ final class Fluffwood64: Game {
             play(.select)
             return true
         }
+        if tx > 224 && tx < 268 && ty > 242 && companion >= 0 {
+            if powerT <= 0 && powerCool <= 0 { activatePower() } else { play(.blip) }
+            return true
+        }
         // creatures
         var bestI = -1
         var bestZ: Float = 1000
@@ -920,6 +926,14 @@ final class Fluffwood64: Game {
         stepTime()
         movePlayer(input)
         updateCreatures()
+        if !pendingCards.isEmpty {
+            var anyJoy = false
+            for c in creatures where c.state == FluffState.joy { anyJoy = true }
+            if !anyJoy {
+                showNextCard()
+                return
+            }
+        }
         if frame % 30 == 0 { maintainCreatures() }
         updateTargeting()
         if input.aPressed { actionA() }
@@ -1280,7 +1294,9 @@ final class Fluffwood64: Game {
         } else {
             let lv: Bool = nowLevel > wasLevel
             addFloater(lv ? "LEVEL UP!" : "+FRIENDSHIP", c.x, c.y, c.gz + 2.4, Fluffwood64.cGold)
-            showToast(lv ? sp2name(sp) + " IS NOW LEVEL " + String(nowLevel) + "!" : sp2name(sp) + " LIKES YOU MORE!", 150)
+            var msg: String = sp2name(sp) + " LIKES YOU MORE!"
+            if lv { msg = sp2name(sp) + " IS NOW LEVEL " + String(nowLevel) + "!" }
+            showToast(msg, 150)
         }
     }
 
@@ -1332,8 +1348,10 @@ final class Fluffwood64: Game {
             powerCool -= 1
         }
         // markers
-        markers.removeAll(keepingCapacity: true)
-        if powerT > 0 && frame % 4 == 0 || (powerT > 0 && markers.isEmpty) {
+        if powerT <= 0 {
+            if !markers.isEmpty { markers.removeAll() }
+        } else if frame % 4 == 0 {
+            markers.removeAll(keepingCapacity: true)
             let ct = companionType()
             if ct == 0 {
                 var found = 0
@@ -1778,7 +1796,6 @@ final class Fluffwood64: Game {
         let vm: Int = Int(bytes[o + 6])
         for r in 0..<3 { visited[r] = (vm & (1 << r)) != 0 }
         if any || starCount() > 0 { hasSave = true }
-        if goalDone[0] { }
     }
 
     // MARK: - Light
@@ -1852,9 +1869,8 @@ final class Fluffwood64: Game {
         computeLight()
         let cam = makeCam()
         lastCam = cam
-        let dpPtr = UnsafeMutablePointer<UInt16>.allocate(capacity: 320 * 288)
+        let dpPtr = depthBuf
         dpPtr.initialize(repeating: 65535, count: 320 * 288)
-        defer { dpPtr.deallocate() }
         b.withPixels { p, w, h in
             if w != 320 || h != 288 { return }
             let pt = FluffPainter(p: p, dp: dpPtr, w: w, h: h)
@@ -2040,7 +2056,9 @@ final class Fluffwood64: Game {
                             let gg: Int = min(255, max(0, Int((c >> 8) & 255) + add))
                             let bb: Int = min(255, max(0, Int((c >> 16) & 255) + add))
                             c = 0xFF00_0000 | UInt32(rr) | (UInt32(gg) << 8) | (UInt32(bb) << 16)
-                            let hs: Int = ((Int(wx * 4.0) &* 73856093) ^ (Int(wy * 4.0) &* 19349663) ^ (tick >> 4)) & 63
+                            let h1: Int = Int(wx * 4.0) &* 73856093
+                            let h2: Int = Int(wy * 4.0) &* 19349663
+                            let hs: Int = (h1 ^ h2 ^ (tick >> 4)) & 63
                             if hs == 0 { c = 0xFFFF_FFFF }
                         }
                         if wdepth < 0.25 {
@@ -2416,7 +2434,6 @@ final class Fluffwood64: Game {
     }
 
     private func drawTitle(_ pt: FluffPainter) {
-        pt.roundRect(0, 0, 320, 288, 0, TrueColorBuffer.rgb(255, 255, 255), 0)
         let word = "FLUFFWOOD"
         let startX: Int = 160 - (word.count * 4 * 5 - 5) / 2
         var i = 0
@@ -2515,7 +2532,6 @@ final class Fluffwood64: Game {
                 let ly: Int = max(64, cy - r - 22)
                 pt.roundRect(lx - 4, ly - 3, wpx + 26, 18, 8, white, 225)
                 if caught[c.sp] { pt.drawTypeIcon(sp.type, lx + wpx + 8, ly + 6, 6) }
-                else { pt.drawTreat(sp.treat < 0 ? 0 : 0, lx + wpx + 8, ly + 6, 0) }
                 uiText(pt, label, lx, ly, Fluffwood64.cInk, 2)
             }
         }
@@ -2770,7 +2786,7 @@ final class Fluffwood64: Game {
 
     private func drawCard(_ pt: FluffPainter) {
         pt.beginUI()
-        pt.roundRect(0, 0, 320, 288, 0, TrueColorBuffer.rgb(60, 40, 100), 0)
+        pt.roundRect(0, 0, 320, 288, 0, TrueColorBuffer.rgb(60, 40, 100), 150)
         let sp = FluffSpecies.all[cardSp]
         pt.roundRect(24, 28, 272, 232, 18, TrueColorBuffer.rgb(255, 200, 224), 255)
         pt.roundRect(28, 32, 264, 224, 15, TrueColorBuffer.rgb(255, 252, 255), 255)

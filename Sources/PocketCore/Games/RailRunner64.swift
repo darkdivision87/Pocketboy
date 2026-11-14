@@ -206,6 +206,48 @@ final class RailRunner64: Game {
     private var duskAmt: Float = 0
 
     override var score: Int { return max(0, Int(distPts) + coinPts + bonusPts) }
+    override var wantsPointer: Bool { return true }
+
+    private var swOX = 0
+    private var swOY = 0
+    private var swStartFrame = 0
+    private var swFired = false
+    private var swMove = 0
+
+    private func processTouch(_ raw: InputState) -> InputState {
+        var inp = raw
+        let ptr = raw.pointer
+        if ptr.pressed {
+            swOX = ptr.x
+            swOY = ptr.y
+            swStartFrame = frame
+            swFired = false
+            swMove = 0
+            if phase != .run { inp.pressed.insert(.a) }
+        }
+        if phase == .run {
+            if ptr.down {
+                let dx = ptr.x - swOX
+                let dy = ptr.y - swOY
+                let m = max(abs(dx), abs(dy))
+                if m > swMove { swMove = m }
+                if m > 24 {
+                    if abs(dx) >= abs(dy) {
+                        if dx < 0 { inp.pressed.insert(.left) } else { inp.pressed.insert(.right) }
+                    } else {
+                        if dy < 0 { inp.pressed.insert(.up) } else { inp.pressed.insert(.down) }
+                    }
+                    swFired = true
+                    swOX = ptr.x
+                    swOY = ptr.y
+                }
+            }
+            if ptr.released && !swFired && swMove < 16 && frame - swStartFrame <= 20 {
+                inp.pressed.insert(.up)
+            }
+        }
+        return inp
+    }
 
     override init() {
         super.init()
@@ -590,7 +632,8 @@ final class RailRunner64: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    override func update(_ rawInput: InputState) {
+        let input = processTouch(rawInput)
         frame += 1
         if bannerTimer > 0 { bannerTimer -= 1 }
         if shake > 0 { shake -= 1 }
@@ -867,7 +910,7 @@ final class RailRunner64: Game {
         // hints
         hint = ""
         if !demo {
-            if frame % 1 == 0 && dist < 25 { hint = "LEFT RIGHT: SWITCH LANE" }
+            if frame % 1 == 0 && dist < 25 { hint = "SWIPE TO MOVE" }
             if !tipJump {
                 for o in objs {
                     let z = o.wz - dist
@@ -1866,6 +1909,7 @@ final class RailRunner64: Game {
             if (frame / 30) & 1 == 0 { ctext(b, "PRESS A TO PLAY", 148, RailRunner64.cGreen, 3) }
             ctext(b, "LEFT RIGHT SWITCH LANE", 174, white, 1)
             ctext(b, "UP OR A JUMP   DOWN OR B ROLL", 184, white, 1)
+            ctext(b, "TOUCH: SWIPE TO MOVE  TAP TO JUMP", 194, white, 1)
         case .ready:
             panel(b, 30, 30, 260, 204)
             ctext(b, "MISSIONS", 40, yellow, 4)
