@@ -103,6 +103,10 @@ final class CratePusher: Game {
     private var holdTimer = 0
     private var clearTimer = 0
     private var frame = 0
+    private var touch = TouchGesture()
+    private var holdStepped = false
+
+    override var wantsPointer: Bool { return true }
 
     private var levelCount: Int { return CratePusher.levels.count }
 
@@ -265,9 +269,10 @@ final class CratePusher: Game {
 
     override func update(_ input: InputState) {
         frame += 1
+        touch.update(input.pointer)
         switch mode {
         case .title:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.confirm)
                 mode = .select
             }
@@ -277,7 +282,7 @@ final class CratePusher: Game {
             updatePlay(input)
         case .cleared:
             clearTimer += 1
-            if clearTimer > 30 && (input.aPressed || input.startPressed) {
+            if clearTimer > 30 && (input.aPressed || input.startPressed || touch.tapped) {
                 play(.confirm)
                 if levelIndex + 1 >= levelCount {
                     mode = .congrats
@@ -292,7 +297,7 @@ final class CratePusher: Game {
                 mode = .play
             }
         case .congrats:
-            if input.aPressed || input.startPressed {
+            if input.aPressed || input.startPressed || touch.tapped {
                 play(.select)
                 cursor = clamp(levelCount - 1, 0, max(0, levelCount - 1))
                 mode = .select
@@ -319,6 +324,72 @@ final class CratePusher: Game {
             mode = .title
             play(.pause)
         }
+        if touch.tapped {
+            for i in 0..<count {
+                let tx = 14 + (i % 4) * 34
+                let ty = 20 + (i / 4) * 26
+                if touch.x >= tx - 2 && touch.x < tx + 32 && touch.y >= ty - 2 && touch.y < ty + 24 {
+                    cursor = i
+                    if i <= maxUnlocked {
+                        play(.confirm)
+                        loadLevel(i)
+                        mode = .play
+                    } else {
+                        play(.thud)
+                    }
+                    break
+                }
+            }
+        }
+    }
+
+    /// Steps the player one tile toward a screen point along the dominant axis. Returns false if the point is on the player.
+    private func touchStep(_ tx: Int, _ ty: Int) -> Bool {
+        let ox = (160 - gridW * 8) / 2
+        let oy = 12 + (120 - gridH * 8) / 2
+        let ddx = tx - (ox + px * 8 + 4)
+        let ddy = ty - (oy + py * 8 + 4)
+        if abs(ddx) < 6 && abs(ddy) < 6 { return false }
+        if abs(ddx) >= abs(ddy) {
+            tryMove(ddx > 0 ? 1 : -1, 0)
+        } else {
+            tryMove(0, ddy > 0 ? 1 : -1)
+        }
+        return true
+    }
+
+    private func updateTouchPlay() {
+        if touch.began { holdStepped = false }
+        if touch.tapped {
+            if touch.y < 11 {
+                play(.pause)
+                mode = .select
+                cursor = levelIndex
+                holdStepped = false
+                return
+            }
+            if touch.y >= 134 {
+                play(.select)
+                loadLevel(levelIndex)
+                holdStepped = false
+                return
+            }
+            if !holdStepped { _ = touchStep(touch.x, touch.y) }
+        }
+        if touch.longPressed && !holdStepped {
+            undo()
+        }
+        if touch.swipe != 0 && mode == .play {
+            if touch.swipe == 1 { tryMove(0, -1) }
+            if touch.swipe == 2 { tryMove(0, 1) }
+            if touch.swipe == 4 { tryMove(-1, 0) }
+            if touch.swipe == 8 { tryMove(1, 0) }
+        }
+        if touch.down && mode == .play && touch.frames >= 10 && (touch.frames - 10) % 8 == 0
+            && abs(touch.dx) < 12 && abs(touch.dy) < 12 {
+            if touchStep(touch.x, touch.y) { holdStepped = true }
+        }
+        if !touch.down { holdStepped = false }
     }
 
     private func updatePlay(_ input: InputState) {
@@ -337,6 +408,8 @@ final class CratePusher: Game {
             undo()
             return
         }
+        updateTouchPlay()
+        if mode != .play { return }
         let dx = input.dx
         let dy = input.dy
         if dx != 0 || dy != 0 {
