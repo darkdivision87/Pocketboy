@@ -465,7 +465,7 @@ function stepFlight(dt) {
   if (fl.v < 24) thT -= (24 - fl.v) * 0.035;
   if (fl.y > 360) thT = Math.min(thT, -0.12 * (fl.y - 360) / 40);
   fl.th += (thT - fl.th) * (1 - Math.exp(-(diveT ? 2.7 : 1.35) * dt));
-  fl.v += (-24 * Math.sin(fl.th) - cD * fl.v * fl.v) * dt; fl.v = clamp(fl.v, 12, 112);
+  fl.v += (-24 * Math.sin(fl.th) - cD * (1 + Math.max(0, fl.f) / 3000) * fl.v * fl.v) * dt; fl.v = clamp(fl.v, 12, 112);
   fl.lift *= Math.exp(-2.3 * dt);
   const vy = fl.v * Math.sin(fl.th) + fl.lift * 9 * wm, vh = fl.v * Math.cos(fl.th);
   const cy = Math.cos(fl.yaw), sy = Math.sin(fl.yaw); HV.set(D0.x * cy + D0.z * sy, 0, -D0.x * sy + D0.z * cy);
@@ -545,7 +545,7 @@ function collectFlightGem(g) {
   sfx('coin', { pitch: 1.1 + (fl.gems % 8) * 0.05, volume: 0.55 }); burst(g.x, g.y, g.z, 6, course.gem[g.c], 6, 0.6, 0.5, 0, true);
 }
 function collectRing(r) {
-  r.done = 0.01; fl.rings++; fl.chain++; run.gems += 2; if (fl.rings % 2 === 0) fl.flaps = Math.min(fl.maxFlaps, fl.flaps + 1);
+  r.done = 0.01; fl.rings++; fl.chain++; run.gems += 2; if (fl.rings % 3 === 0) fl.flaps = Math.min(fl.maxFlaps, fl.flaps + 1);
   const m = 1 + 0.5 * fl.rings; banner(`RING!  x${m % 1 ? m.toFixed(1) : m}`, '#ffe36a');
   sfx('powerup', { volume: 0.4, pitch: 0.9 + Math.min(fl.chain, 8) * 0.07 });
   burst(r.x, r.y, r.z, 36, 0xffd23f, 16, 0.9, 0.8, 0, true); burst(r.x, r.y, r.z, 14, 0xffffff, 10, 0.7, 0.7, 0, true);
