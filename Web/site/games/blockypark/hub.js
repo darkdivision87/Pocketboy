@@ -21,7 +21,7 @@ export function createHub(G) {
   const scene = z.scene;
   z.init = () => {
     const r = rng(7); const b = new Batch();
-    scene.fog = new THREE.Fog(0xbfe6ff, 80, 250);
+    scene.fog = new THREE.Fog(0xbfe6ff, 110, 340);
     scene.add(makeSky(0x3fa0ff, 0xc8ecff, 0xd8f4d8)); scene.add(makeClouds(26, 5));
     z.light = makeLights(scene, { shadow: 40 });
     // ground tiles
@@ -29,7 +29,7 @@ export function createHub(G) {
     for (let x = -R; x < R; x += 2) for (let zz = -R; zz < R; zz += 2) {
       const cx = x + 1, cz = zz + 1, d = Math.hypot(cx, cz); if (d > R + 0.5) continue;
       let col, jit = 0.05;
-      if (d < 14) { col = ((x / 2 + zz / 2) & 1) ? 0xfff2dc : 0xffd9e6; jit = 0.02; }
+      if (d < 14) { col = ((x / 2 + zz / 2) & 1) ? 0xffe9c9 : 0xffcfe0; jit = 0.02; }
       else if (d < 15.5) col = 0xff9fc0;
       else if (onPath(cx, cz)) { col = ((x / 2 + zz / 2) & 1) ? 0xf6df9d : 0xefd28a; jit = 0.02; }
       else col = ((x / 2 + zz / 2) & 1) ? 0x72dc6b : 0x66d062;
@@ -76,7 +76,7 @@ export function createHub(G) {
     for (let k = 0; k < 120; k++) { const a = k / 120 * 6.283, x = Math.cos(a) * (R - 0.5), zz = Math.sin(a) * (R - 0.5), a2 = (k + 1) / 120 * 6.283, mx = (x + Math.cos(a2) * (R - 0.5)) / 2, mz = (zz + Math.sin(a2) * (R - 0.5)) / 2; b.box(x, 0.9, zz, 0.35, 1.8, 0.35, 0xffffff); b.boxR(mx, 1.3, mz, 3.3, 0.22, 0.14, -(a + a2) / 2 - Math.PI / 2, k % 2 ? 0xff9fc0 : 0x8fd8ff); b.boxR(mx, 0.7, mz, 3.3, 0.22, 0.14, -(a + a2) / 2 - Math.PI / 2, k % 2 ? 0x8fd8ff : 0xff9fc0); }
     // distant mountains
     const cone = new THREE.ConeGeometry(1, 1, 4);
-    for (let k = 0; k < 28; k++) { const a = k / 28 * 6.283 + r() * 0.2, d = 120 + r() * 50, h = 26 + r() * 46, w = 26 + r() * 30, c = new THREE.Color().setHSL(0.55 + r() * 0.1, 0.35, 0.62 - r() * 0.1).getHex(); b.geo(cone, Math.cos(a) * d, h / 2 - 2, Math.sin(a) * d, w, h, w, c, r() * 3); b.geo(cone, Math.cos(a) * d, h * 0.86 - 2, Math.sin(a) * d, w * 0.28, h * 0.28, w * 0.28, 0xffffff, 0); }
+    for (let k = 0; k < 28; k++) { const a = k / 28 * 6.283 + r() * 0.2, d = 175 + r() * 60, h = 40 + r() * 60, w = 50 + r() * 40, c = new THREE.Color().setHSL(0.52 + r() * 0.12, 0.45, 0.5 - r() * 0.1).getHex(); b.geo(cone, Math.cos(a) * d, h / 2 - 2, Math.sin(a) * d, w, h, w, c, r() * 3); b.geo(cone, Math.cos(a) * d, h * 0.86 - 2, Math.sin(a) * d, w * 0.28, h * 0.28, w * 0.28, 0xffffff, 0); }
     // bounce mushrooms
     const cyl = new THREE.CylinderGeometry(1, 1.15, 1, 14);
     for (const [x, zz] of [[-11, 21], [13, -22], [-30, -44], [48, 6]]) { b.box(x, 0.25, zz, 0.7, 0.5, 0.7, 0xfff4d8); b.geo(cyl, x, 0.62, zz, 1.6, 0.36, 1.6, 0xff4f6d); for (let k = 0; k < 5; k++) b.box(x + Math.cos(k * 1.26) * 0.8, 0.82, zz + Math.sin(k * 1.26) * 0.8, 0.28, 0.08, 0.28, 0xffffff); const c = box(x - 0.9, 0, zz - 0.9, x + 0.9, 0.8, zz + 0.9, { bounce: 21 }); z.cols.push(c); z.pads.push({ x, z: zz }); }

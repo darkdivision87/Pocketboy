@@ -132,8 +132,8 @@ export function makeClouds(n, seed, rad = 220, y0 = 45, y1 = 90) {
   const m = b.build(mat, false); m.receiveShadow = false; return m;
 }
 export function makeLights(scene, opts = {}) {
-  const hemi = new THREE.HemisphereLight(opts.sky || 0xcfe9ff, opts.ground || 0x88c070, opts.hemi ?? 1.15); scene.add(hemi);
-  const sun = new THREE.DirectionalLight(opts.sun || 0xfff1d6, opts.sunI ?? 2.1);
+  const hemi = new THREE.HemisphereLight(opts.sky || 0xcfe9ff, opts.ground || 0x88c070, opts.hemi ?? 0.9); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(opts.sun || 0xfff1d6, opts.sunI ?? 1.7);
   sun.position.set(30, 50, 20); sun.castShadow = true; const sh = opts.shadow || 36;
   sun.shadow.mapSize.set(opts.map || 2048, opts.map || 2048);
   const c = sun.shadow.camera; c.left = -sh; c.right = sh; c.top = sh; c.bottom = -sh; c.near = 5; c.far = 140;

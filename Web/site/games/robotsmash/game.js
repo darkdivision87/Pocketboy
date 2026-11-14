@@ -75,7 +75,7 @@ function popText(txt, x, y, col = '#fff', s = 34) { const t = T[tCur]; tCur = (t
 function addB(...b) { Composite.add(world, b); }
 function buildWorld() {
   S.over = false; S.started = false; S.pops = 0; S.downCount = 0; S.moves = 0; S.chaos = 0; S.gflip = 1; S.gTimer = 0; S.coinsEarned = 0; S.slow = 0; S.winPending = 0; S.time = 0;
-  engine = Engine.create({ positionIterations: 8, velocityIterations: 6, constraintIterations: 10 });
+  engine = Engine.create({ positionIterations: TUNE.pos, velocityIterations: TUNE.vel, constraintIterations: TUNE.con });
   world = engine.world; robots = []; props = []; ducks = []; bombs = []; obstacles = []; pointers.clear();
   const A = ARENAS[S.arena]; engine.gravity.y = A.gravity; engine.gravity.scale = 0.001;
   const wopt = { isStatic: true, friction: 0.5, restitution: A.wallRest, label: 'wall' };
@@ -92,9 +92,10 @@ const JOINTS = [
   ['shL', 'torso', [-31, -22], 'uL', [7, -16], 3.0], ['shR', 'torso', [31, -22], 'uR', [-7, -16], 3.0],
   ['elL', 'uL', [0, 16], 'fL', [0, -19], 2.2], ['elR', 'uR', [0, 16], 'fR', [0, -19], 2.2],
   ['hipL', 'torso', [-14, 30], 'tL', [0, -17], 1.6], ['hipR', 'torso', [14, 30], 'tR', [0, -17], 1.6],
-  ['knL', 'tL', [0, 17], 'sL', [0, -17], 1.9], ['knR', 'tR', [0, 17], 'sR', [0, -17], 1.9],
+  ['knL', 'tL', [0, 17], 'sL', [0, -20], 1.9], ['knR', 'tR', [0, 17], 'sR', [0, -20], 1.9],
 ];
 const LAYOUT = { head: [0, -49, 'head'], torso: [0, 0, 'torso'], uL: [-38, -6, 'arm'], uR: [38, -6, 'arm'], fL: [-38, 29, 'fore'], fR: [38, 29, 'fore'], tL: [-14, 47, 'thigh'], tR: [14, 47, 'thigh'], sL: [-14, 84, 'shin'], sR: [14, 84, 'shin'] };
+const TUNE = { pd: 1, stiff: 0.9, damp: 0.14, pos: 8, vel: 6, con: 10, limb: 1, torso: 1 };
 const DENS = { head: 0.0016, torso: 0.0024, arm: 0.0013, fore: 0.0013, thigh: 0.0014, shin: 0.0014 };
 const STAND_H = 104; // torso center to sole
 function spawnRobot(x, y, slot, old) {
@@ -102,13 +103,13 @@ function spawnRobot(x, y, slot, old) {
   const group = -r.id; const cy = y || (floorY - STAND_H - 2);
   for (const k in LAYOUT) {
     const [dx, dy, kind] = LAYOUT[k], pd = PART[kind];
-    const b = Bodies.rectangle(x + dx, cy + dy, pd.w, pd.h, { chamfer: { radius: Math.min(pd.w, pd.h) * 0.32 }, density: DENS[kind], friction: 0.7, frictionStatic: 0.08, frictionAir: 0.014, restitution: 0.22, collisionFilter: { group }, label: 'part' });
+    const b = Bodies.rectangle(x + dx, cy + dy, pd.w, pd.h, { chamfer: { radius: Math.min(pd.w, pd.h) * 0.32 }, density: DENS[kind] * (kind === 'torso' || kind === 'head' ? TUNE.torso : TUNE.limb), friction: 0.7, frictionStatic: 0.08, frictionAir: 0.014, restitution: 0.22, collisionFilter: { group }, label: 'part' });
     b.plugin = { robot: r, kind, key: k }; r.parts[k] = b;
   }
   for (const [name, pa, pA, pb, pB, lim] of JOINTS) {
     const A = r.parts[pa], B = r.parts[pb];
-    const c = Constraint.create({ bodyA: A, pointA: { x: pA[0], y: pA[1] }, bodyB: B, pointB: { x: pB[0], y: pB[1] }, length: 0, stiffness: 0.9, damping: 0.14 });
-    r.joints.push({ name, c, A, B, lim, strain: 0, broken: false, rel: 0, freeAt: 0 });
+    const c = Constraint.create({ bodyA: A, pointA: { x: pA[0], y: pA[1] }, bodyB: B, pointB: { x: pB[0], y: pB[1] }, length: 0, stiffness: TUNE.stiff, damping: TUNE.damp });
+    r.joints.push({ name, c, A, B, lim, keep: /^(hip|kn|neck)/.test(name), strain: 0, broken: false, rel: 0, freeAt: 0 });
   }
   Composite.add(world, Object.values(r.parts)); Composite.add(world, r.joints.map((j) => j.c));
   robots.push(r); return r;
@@ -279,7 +280,7 @@ function postStep(dt) {
     for (const k in r.parts) {
       const b = r.parts[k];
       const sp = Math.hypot(b.velocity.x, b.velocity.y); if (sp > 38) { const f = 38 / sp; Body.setVelocity(b, { x: b.velocity.x * f, y: b.velocity.y * f }); }
-      if (r.stand > 0) { const g = GAIN[b.plugin.kind]; const e = wrapA(b.angle); Body.setAngularVelocity(b, b.angularVelocity + r.stand * (-g[0] * e - g[1] * b.angularVelocity)); }
+      if (r.stand > 0) { const g = GAIN[b.plugin.kind]; const e = wrapA(b.angle); Body.setAngularVelocity(b, b.angularVelocity + TUNE.pd * r.stand * (-g[0] * e - g[1] * b.angularVelocity)); }
     }
     if (r.stand > 0.5) { // a gentle upward hop assist so feet stay under the body
       const t = r.parts.torso; const lowest = r.parts.sL.position.y + 20; if (lowest > floorY - 3 && t.position.y > r.parts.head.position.y) { /* grounded */ }
@@ -288,10 +289,10 @@ function postStep(dt) {
       if (j.broken) continue;
       const [ax, ay] = jointWorld(j.A, j.c.pointA), [bx, by] = jointWorld(j.B, j.c.pointB);
       const d = Math.hypot(ax - bx, ay - by); j.d = d; j.ax = ax; j.ay = ay; j.bx = bx; j.by = by;
-      j.strain = j.strain * 0.92 + (d > 14 ? (d - 14) : 0);
+      j.strain = j.strain * 0.92 + (d > 16 ? (d - 16) : 0);
       { const ra = Math.max(clamp(j.strain / 170, 0, 1), j.pullR || 0); if (ra > (j.A.plugin.jit || 0)) j.A.plugin.jit = ra; if (ra > (j.B.plugin.jit || 0)) j.B.plugin.jit = ra; }
       if (!r.frozen && S.mode !== 'demo' && (j.strain > 170 || d > 90)) { snapJoint(r, j, (ax + bx) / 2, (ay + by) / 2); continue; }
-      if (j.lim < 2.5) { const rel = wrapA(j.B.angle - j.A.angle); if (Math.abs(rel) > j.lim) { Body.setAngle(j.B, j.A.angle + Math.sign(rel) * j.lim); Body.setAngularVelocity(j.B, j.A.angularVelocity * 0.6); } }
+      if (j.lim < 2.5) { const lim = j.keep ? j.lim + (0.1 - j.lim) * r.stand : j.lim; const rel = wrapA(j.B.angle - j.A.angle); if (Math.abs(rel) > lim) { Body.setAngle(j.B, j.A.angle + Math.sign(rel) * lim); Body.setAngularVelocity(j.B, j.A.angularVelocity * 0.6); } }
     }
     // lying down detection (for knock missions)
     const t = r.parts.torso; const lying = Math.abs(wrapA(t.angle)) > 1.1 || (r.baseY && t.position.y > r.baseY + 42);
@@ -465,12 +466,12 @@ function tryGrab(pt, p) {
   const b = findPart(p); if (!b) { sparkle(p.x, p.y, 4, '#ffffff', 3); return false; }
   const c = Math.cos(-b.angle), s = Math.sin(-b.angle), dx = p.x - b.position.x, dy = p.y - b.position.y;
   const con = Constraint.create({ pointA: { x: p.x, y: p.y }, bodyB: b, pointB: { x: dx * c - dy * s, y: dx * s + dy * c }, length: 0.01, stiffness: 0.22 + 0.04 * save.up.grip, damping: 0.1 });
-  Composite.add(world, con); pt.grab = { body: b, con, m: b.mass }; Body.setMass(b, b.mass * 5); sfx('squeak', .45, rand(1, 1.6), 60);
+  Composite.add(world, con); pt.grab = { body: b, con, m: b.mass }; sfx('squeak', .45, rand(1, 1.6), 60);
   const r = b.plugin && b.plugin.robot; if (r) { r.stun = Math.max(r.stun, 1.2); r.stand = 0; r.happy = 0.6; }
   startAction(); return true;
 }
 function releaseGrab(pt) {
-  if (!pt.grab) return; const { body, con, m } = pt.grab; Composite.remove(world, con); Body.setMass(body, m);
+  if (!pt.grab) return; const { body, con, m } = pt.grab; Composite.remove(world, con);
   const g = 1.0 + 0.1 * save.up.grip, vx = clamp(pt.vx * g, -36, 36), vy = clamp(pt.vy * g, -36, 36);
   if (Math.hypot(vx, vy) > 3) { Body.setVelocity(body, { x: vx, y: vy }); if (Math.hypot(vx, vy) > 14) { sfx('whoosh', .5, rand(.9, 1.3), 80); S.chaos = Math.min(1.2, S.chaos + .15); } }
   S.moves++; pt.grab = null;
@@ -833,6 +834,7 @@ setInterval(() => { if (dirty) { dirty = false; persist(); } }, 2500);
 window.addEventListener('pagehide', persist);
 
 // ------------------------------------------------------------------ main loop
+function stepSim() { stepForces(); Engine.update(engine, 1000 / 60); postStep(1 / 60); stepFx(1 / 60); }
 let last = performance.now(), acc = 0, demoT = 2;
 function frame(now) {
   const dtR = Math.min(0.1, (now - last) / 1000); last = now; clock += dtR;
@@ -840,7 +842,7 @@ function frame(now) {
     const running = !S.paused && !S.hintOpen;
     if (running) {
       const slow = S.slow > 0 ? 0.35 : 1; S.slow = Math.max(0, S.slow - dtR); acc += dtR * slow; let n = 0;
-      while (acc >= 1 / 60 && n < 3) { stepForces(); Engine.update(engine, 1000 / 60); postStep(1 / 60); stepFx(1 / 60); acc -= 1 / 60; n++; }
+      while (acc >= 1 / 60 && n < 3) { stepSim(); acc -= 1 / 60; n++; }
       if (n === 3) acc = 0;
       if (S.mode === 'demo' || S.screen !== 'play') { demoT -= dtR; if (demoT < 0 && robots.length) { demoT = rand(2, 3.5); const r = robots[Math.random() * robots.length | 0], t = r.parts.torso, hv = { x: rand(-5, 5), y: -13 }; for (const k in r.parts) Body.setVelocity(r.parts[k], hv); Body.setAngularVelocity(t, rand(-.25, .25)); r.stand = 0; r.stun = 1.8; sfx('boing', .25, rand(.8, 1.5), 400); } }
     }
@@ -851,4 +853,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 setIcons(); layout(); enterDemo(); setScreen('title'); requestAnimationFrame(frame);
-window.__rs = { get engine() { return engine; }, S, save, get W() { return W; }, get floorY() { return floorY; }, get robots() { return robots; }, LEVELS, startMission, startSandbox, get props() { return props; }, setGravity, rebuildAll, music };
+window.__rs = { TUNE, stepSim, get engine() { return engine; }, S, save, get W() { return W; }, get floorY() { return floorY; }, get robots() { return robots; }, LEVELS, startMission, startSandbox, get props() { return props; }, setGravity, rebuildAll, music };

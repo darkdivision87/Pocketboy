@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { Maestro } from '../shared/maestro.js';
-import { Save, svg, clamp, lerp, damp, makeSky, makeLights } from './util.js';
+import { Save, svg, clamp, lerp, damp, angDiff, makeSky, makeLights } from './util.js';
 import { Input } from './input.js';
 import { Particles, floatText } from './fx.js';
 import { makeBody, rayBoxes } from './physics.js';
@@ -119,7 +119,7 @@ const FACTORY = { hub: createHub, obby: createObby, tycoon: createTycoon, tag: c
 const ZONE_NAMES = { hub: 'Blocky Park', obby: 'Sky Obby', tycoon: 'Coin Tycoon', tag: 'Freeze Tag', race: 'Kart Race', build: 'Build Zone' };
 async function enterZone(id, opts) {
   const old = G.zone; if (old) { old.exit && old.exit(G); if (P.avatar.root.parent) P.avatar.root.parent.remove(P.avatar.root); }
-  let z = G.zones[id]; if (!z) { z = G.zones[id] = FACTORY[id](G); z.id = id; z.init(G); z.fx = new Particles(); z.scene.add(z.fx.points); z.fx.resize(innerHeight, renderer.getPixelRatio()); if (envTex && !z.noEnv) z.scene.environment = envTex; }
+  let z = G.zones[id]; if (!z) { z = G.zones[id] = FACTORY[id](G); z.id = id; z.init(G); z.fx = new Particles(); z.scene.add(z.fx.points); z.fx.resize(innerHeight, renderer.getPixelRatio()); if (envTex && !z.noEnv) { z.scene.environment = envTex; z.scene.environmentIntensity = 0.35; } }
   G.zone = z; G.scene = z.scene; G.fx = z.fx;
   document.body.className = document.body.className.replace(/z-\w+/g, '') + ' z-' + id;
   $('zoneLabel').textContent = ZONE_NAMES[id]; G.zoneHud(''); G.bottomBar('');
@@ -127,6 +127,7 @@ async function enterZone(id, opts) {
   input.hasStick = z.stick !== false;
   z.scene.add(P.avatar.root); P.avatar.root.visible = true; P.avatar.seated = false;
   P.stun = 0; P.speedMul = 1; P.body.vx = P.body.vy = P.body.vz = 0;
+  cam.auto = null; cam.lastDrag = 0;
   z.enter(G, opts || {});
   cam.shake = 0;
   G.state = 'play';
@@ -140,7 +141,8 @@ function refreshCoins() { $('coinChip').innerHTML = svg('coin') + `<b>${S.coins}
 // ---------- orbit camera ----------
 const _o = new THREE.Vector3();
 function orbitCamera(dt, tx, ty, tz, cols, grid) {
-  const [dx, dy, dz] = input.takeCam();
+  const [dx, dy, dz] = input.takeCam(); const nowT = performance.now(); if (dx || dy) cam.lastDrag = nowT;
+  if (cam.auto != null && nowT - (cam.lastDrag || 0) > 1500 && (input.mx || input.my)) cam.yaw += angDiff(cam.yaw, cam.auto) * Math.min(1, dt * 1.6);
   cam.yaw -= dx * 0.0058; cam.pitch = clamp(cam.pitch + dy * 0.0042, 0.04, 1.25); cam.dist = clamp(cam.dist + dz, 4.5, 18);
   cam.tgt.x = damp(cam.tgt.x, tx, 18, dt); cam.tgt.y = damp(cam.tgt.y, ty, 10, dt); cam.tgt.z = damp(cam.tgt.z, tz, 18, dt);
   const cp = Math.cos(cam.pitch), dxn = Math.sin(cam.yaw) * cp, dyn = Math.sin(cam.pitch), dzn = Math.cos(cam.yaw) * cp;
@@ -323,7 +325,7 @@ function frame(now) {
   renderer.render(z.scene, camera);
 }
 function titleCamera(dt) {
-  const a = performance.now() / 6000; camera.position.set(Math.sin(a) * 15, 5.2, 10 + Math.cos(a) * 12 - 6); camera.lookAt(0, 2.4, 6);
+  const a = performance.now() / 6000; camera.position.set(Math.sin(a) * 26, 8.5, 2 + Math.cos(a) * 26); camera.lookAt(0, 2.2, 2);
 }
 G.titleCam = titleCamera;
 
