@@ -5,8 +5,7 @@ import PackageDescription
 // See ../../.github/workflows/pocketboy-web.yml for the exact build command.
 let reactor: [String] = [
     "-Xclang-linker", "-mexec-model=reactor",
-    "-Xlinker", "-z", "-Xlinker", "stack-size=1048576",
-    "-Xlinker", "--strip-all"
+    "-Xlinker", "-z", "-Xlinker", "stack-size=1048576"
 ]
 
 let package = Package(
