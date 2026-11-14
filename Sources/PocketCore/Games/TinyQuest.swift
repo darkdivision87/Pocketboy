@@ -497,6 +497,9 @@ final class TinyQuest: Game {
     private var bannerTimer = 0
     private var bannerText = ""
 
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+
     override var score: Int {
         var s = gems * 10 + kills * 25
         for v in visited where v { s += 20 }
@@ -1263,7 +1266,43 @@ final class TinyQuest: Game {
 
     // MARK: Update
 
-    override func update(_ input: InputState) {
+    private func faceToward(_ tx: Int, _ ty: Int) {
+        let fdx: Int = tx - Int(px + 6)
+        let fdy: Int = ty - Int(py + 6)
+        if abs(fdx) < 3 && abs(fdy) < 3 { return }
+        if abs(fdx) >= abs(fdy) {
+            facing = fdx < 0 ? 2 : 3
+        } else {
+            facing = fdy < 0 ? 1 : 0
+        }
+    }
+
+    override func update(_ rawInput: InputState) {
+        touch.update(rawInput.pointer)
+        var input = rawInput
+        if mode == .play {
+            if paused {
+                if touch.tapped { input.pressed.insert(.start) }
+            } else {
+                if touch.down {
+                    let fdx: Int = touch.x - Int(px + 6)
+                    let fdy: Int = touch.y - Int(py + 6)
+                    if fdx > 8 { input.held.insert(.right) }
+                    else if fdx < -8 { input.held.insert(.left) }
+                    if fdy > 8 { input.held.insert(.down) }
+                    else if fdy < -8 { input.held.insert(.up) }
+                }
+                if touch.tapped {
+                    faceToward(touch.x, touch.y)
+                    input.pressed.insert(.a)
+                } else if touch.longPressed {
+                    faceToward(touch.x, touch.y)
+                    input.pressed.insert(.b)
+                }
+            }
+        } else if touch.tapped {
+            input.pressed.insert(.a)
+        }
         frame += 1
         if maps.isEmpty { newGame() }
         switch mode {

@@ -354,6 +354,10 @@ final class CappyLand: Game {
     private var timeTick = 0
 
     override var score: Int { return points }
+    override var wantsPointer: Bool { return true }
+    private var touch = TouchGesture()
+    private var touchAbove = false
+    private var touchRun = false
 
     override func start() {
         playMusic(Tunes.adventure)
@@ -500,7 +504,34 @@ final class CappyLand: Game {
 
     // MARK: - Update
 
-    override func update(_ input: InputState) {
+    override func update(_ rawInput: InputState) {
+        touch.update(rawInput.pointer)
+        var input = rawInput
+        if mode == .play {
+            if touch.down {
+                let heroSX: Int = Int(hero.x - camX + hero.w * 0.5)
+                let heroSY: Int = Int(hero.y + hero.h * 0.5)
+                let fdx: Int = touch.x - heroSX
+                let fdy: Int = touch.y - heroSY
+                if fdx > 10 { input.held.insert(.right) }
+                else if fdx < -10 { input.held.insert(.left) }
+                let above: Bool = fdy < -24
+                if above {
+                    input.held.insert(.a)
+                    if !touchAbove { input.pressed.insert(.a) }
+                }
+                touchAbove = above
+                if touch.longPressed { touchRun = true }
+                if touchRun { input.held.insert(.b) }
+            } else {
+                touchAbove = false
+                touchRun = false
+            }
+        } else {
+            touchAbove = false
+            touchRun = false
+            if touch.tapped { input.pressed.insert(.a) }
+        }
         tick += 1
         switch mode {
         case .title:
