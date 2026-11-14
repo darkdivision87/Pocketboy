@@ -5,6 +5,7 @@ import PackageDescription
 // finished and registered in Library.swift; delete a line here when its game is ready. This keeps a half-written
 // file from blocking the build (and the website deploy).
 let wipFiles: [String] = [
+    "Games/LanternAudio.swift",
     "Games/LanternSave.swift",
     "Games/LanternArt.swift",
     "Games/LanternWorld.swift",
