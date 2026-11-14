@@ -117,7 +117,7 @@ export function makeSky(top, mid, bot) {
     side: THREE.BackSide, depthWrite: false, fog: false,
     uniforms: { top: { value: new THREE.Color(top) }, mid: { value: new THREE.Color(mid) }, bot: { value: new THREE.Color(bot) } },
     vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-    fragmentShader: 'uniform vec3 top,mid,bot; varying vec3 vP; void main(){ float h=vP.y; vec3 c = h>0. ? mix(mid, top, pow(h,0.6)) : mix(mid, bot, pow(-h,0.5)); gl_FragColor=vec4(c,1.); #include <colorspace_fragment>\n}',
+    fragmentShader: 'uniform vec3 top,mid,bot; varying vec3 vP; void main(){ float h=vP.y; vec3 c = h>0. ? mix(mid, top, pow(h,0.6)) : mix(mid, bot, pow(-h,0.5)); gl_FragColor=vec4(c,1.);\n#include <colorspace_fragment>\n}',
   });
   const m = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 16), mat); m.renderOrder = -10; m.frustumCulled = false; return m;
 }

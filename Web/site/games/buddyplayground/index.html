@@ -48,7 +48,7 @@ svg{display:block}
 
 /* shelf */
 #shelfWrap{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:0 0 var(--safe-b);transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
-#shelfWrap.hidden{transform:translateY(160px)}
+#shelfWrap.hidden{transform:translateY(300px)}
 #shelfBoard{position:absolute;left:0;right:0;bottom:0;top:38px;background:linear-gradient(#e7a96b,#c9824a 60%,#b46d38);box-shadow:0 -4px 0 #f3c590 inset,0 -10px 22px rgba(90,40,20,.25);border-radius:22px 22px 0 0}
 #shelf{position:relative;display:flex;gap:10px;align-items:flex-end;overflow-x:auto;overflow-y:visible;padding:26px 14px 12px calc(14px + var(--safe-l));-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;height:134px}
 #shelf::-webkit-scrollbar{display:none}
@@ -149,6 +149,51 @@ svg{display:block}
   .card h2{font-size:30px}
 }
 @media (max-height:520px){#shelf{height:100px}.tile{width:66px;height:76px}.tile canvas{width:48px;height:48px}.card{padding:14px}.big{min-height:52px;font-size:21px;margin-top:8px}}
+
+/* v2 additions */
+#hp{position:absolute;left:50%;top:calc(76px + var(--safe-t));transform:translateX(-50%);z-index:5;display:flex;align-items:center;gap:8px;width:min(360px,64vw);pointer-events:none;transition:opacity .3s}
+#hp.hidden{opacity:0}
+#hpHeart{width:34px;height:34px;flex:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.15))}
+#hpBar{position:relative;flex:1;height:30px;border-radius:15px;background:rgba(255,255,255,.7);box-shadow:inset 0 3px 6px rgba(120,40,90,.3),0 3px 0 rgba(255,255,255,.5);overflow:hidden}
+#hpFill{position:absolute;left:3px;top:3px;bottom:3px;width:100%;border-radius:12px;max-width:calc(100% - 6px);box-shadow:inset 0 3px 0 rgba(255,255,255,.5);transition:width .25s}
+#hpTxt{position:absolute;inset:0;display:grid;place-items:center;font-weight:900;font-size:15px;color:#fff;text-shadow:0 2px 0 rgba(90,30,90,.7)}
+#comboTag{position:absolute;right:-6px;top:34px;background:#ffb52e;color:#fff;font-weight:900;font-size:14px;border-radius:12px;padding:2px 10px;text-shadow:0 1px 0 rgba(120,60,0,.6);box-shadow:0 3px 0 #c47d12;animation:bump .3s}
+#comboTag.hidden{display:none}
+#tabs{position:relative;display:flex;gap:8px;padding:0 14px 0 calc(14px + var(--safe-l));overflow-x:auto;scrollbar-width:none;touch-action:pan-x;height:58px;align-items:flex-end}
+#tabs::-webkit-scrollbar,#items::-webkit-scrollbar{display:none}
+.ctab{flex:none;min-width:72px;height:56px;border-radius:18px 18px 8px 8px;background:linear-gradient(#f5dcb4,#e0b680);box-shadow:0 -3px 0 #f8e7c8 inset,0 3px 0 #a86d38;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2px 8px 0;transition:transform .15s;color:#7a4a1f}
+.ctab canvas{width:30px;height:30px;pointer-events:none}
+.ctab span{font-size:11px;font-weight:900;line-height:1;pointer-events:none}
+.ctab.on{background:linear-gradient(#fff,#ffeec9);color:var(--pinkd);transform:translateY(-4px);height:60px;box-shadow:0 3px 0 #a86d38,0 0 0 3px #fff}
+#items{position:relative;display:flex;gap:10px;align-items:flex-end;overflow-x:auto;overflow-y:visible;padding:20px 14px 12px calc(14px + var(--safe-l));scrollbar-width:none;touch-action:pan-x;height:126px;-webkit-overflow-scrolling:touch}
+#shelfBoard{top:52px !important}
+#shelfWrap{padding-top:0}
+#trash{position:absolute;right:calc(12px + var(--safe-r));bottom:calc(var(--shelfH,190px) + 10px);z-index:7;background:linear-gradient(#fff,#dbe8ff);box-shadow:0 5px 0 #a8bff0,0 8px 14px rgba(40,60,120,.25)}
+#trash.armed{background:linear-gradient(#ffd0d6,#ff8a9a);box-shadow:0 5px 0 #c4384c;animation:wig .5s infinite}
+#trash.hidden{display:none}
+.rbtn.pulse{animation:pulse2 1.2s infinite}
+@keyframes pulse2{50%{transform:scale(1.12)}}
+.rbtn.hidden{display:none}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.tgl{min-height:56px;border-radius:28px;background:#e8dff0;font-weight:900;font-size:15px;color:#8a7a9a;box-shadow:0 4px 0 #cdbfd8;padding:0 6px}
+.tgl.on{background:linear-gradient(#7aeaaa,#2fc678);color:#fff;box-shadow:0 4px 0 #1a8f50;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+#statRows{display:grid;gap:8px;margin:8px 0 6px}
+.srow{display:flex;justify-content:space-between;background:#fff;border-radius:18px;padding:10px 16px;font-weight:800;font-size:18px;box-shadow:0 3px 0 #e3d3ea}
+.srow b{color:var(--pinkd)}
+#dayGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
+.day{position:relative;background:#fff;border-radius:18px;padding:8px 2px;box-shadow:0 4px 0 #e3d3ea;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:900;color:var(--ink2)}
+.day .dic{width:48px;height:48px}.day svg,.day canvas{width:48px;height:48px}
+.day.today{outline:4px solid var(--yellow);animation:pulse2 1.2s infinite}
+.day.done{opacity:.55}.day i{position:absolute;top:-8px;right:-4px;background:var(--green);color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-style:normal}
+#koAmt{font-size:64px;font-weight:900;color:#2fa84f;text-shadow:0 4px 0 #bfeccb;margin:4px 0}
+#koDbl.spin{animation:spinx .6s linear 2}
+@keyframes spinx{to{transform:rotate(360deg)}}
+#koDbl:disabled{opacity:.9}
+.hidden{display:none}
+#hud.hidden,#hp.hidden,#shelfWrap.hidden{display:flex}
+#hp.hidden{display:flex;opacity:0}
+#shelfWrap.hidden{display:block}
+@media (max-width:560px){.nophone{display:none}.ctab{min-width:64px}.pill{padding-right:10px}#hp{top:calc(70px + var(--safe-t))}}
 </style>
 </head>
 <body>
@@ -157,14 +202,17 @@ svg{display:block}
 
   <div id="hud" class="hidden">
     <button class="rbtn" id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 32 32"><rect x="7" y="5" width="7" height="22" rx="3.5" fill="#ff4f94"/><rect x="18" y="5" width="7" height="22" rx="3.5" fill="#ff4f94"/></svg></button>
-    <div class="pill" id="coinPill"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#ffd23f" stroke="#c47d12" stroke-width="2.5"/><circle cx="16" cy="16" r="9" fill="none" stroke="#e0a416" stroke-width="2.5"/><path d="M12 9a6 6 0 0 1 5-2" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg><span id="coinN">0</span></div>
-    <div class="pill" id="starPill"><svg viewBox="0 0 32 32"><path d="M16 3l3.8 8.2 8.9 1-6.6 6 1.9 8.8L16 22.5 8 27l1.9-8.8-6.6-6 8.9-1z" fill="#ffb52e" stroke="#c47d12" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 11l2-4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg><span id="starN">0</span></div>
+    <div class="pill" id="cashPill"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#58d68d" stroke="#1a8f50" stroke-width="2.5"/><circle cx="16" cy="16" r="9.5" fill="none" stroke="#a8f0c8" stroke-width="2"/><text x="16" y="21.5" text-anchor="middle" font-size="15" font-weight="900" fill="#fff" font-family="system-ui,sans-serif">$</text></svg><span id="cashN">0</span></div>
+    <div class="pill" id="goldPill"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#ffd23f" stroke="#c47d12" stroke-width="2.5"/><path d="M16 7l2.6 5.6 6 .7-4.5 4.1 1.3 6L16 20.4 10.6 23.4l1.3-6-4.5-4.1 6-.7z" fill="#fff6c0" stroke="#e0a416" stroke-width="1.5" stroke-linejoin="round"/></svg><span id="goldN">0</span></div>
     <div class="spacer"></div>
-    <button class="rbtn" id="muteBtn" aria-label="Sound"></button>
+    <button class="rbtn pulse hidden" id="giftBtn" aria-label="Daily gift"></button>
+    <button class="rbtn" id="extrasBtn" aria-label="Extras"></button>
+    <button class="rbtn nophone" id="muteBtn" aria-label="Sound"></button>
   </div>
-  <div id="combo" class="hidden"><div id="comboFill"></div><div id="comboTxt">FUN!</div></div>
+  <div id="hp" class="hidden"><div id="hpHeart"></div><div id="hpBar"><div id="hpFill"></div><div id="hpTxt">Buddy</div></div><div id="comboTag" class="hidden"></div></div>
 
-  <div id="shelfWrap" class="hidden"><div id="shelfBoard"></div><div id="shelf"></div></div>
+  <button class="rbtn hidden" id="trash" aria-label="Clear everything"></button>
+  <div id="shelfWrap" class="hidden"><div id="shelfBoard"></div><div id="tabs"></div><div id="items"></div></div>
   <div id="hint" class="hidden"></div>
   <div id="toast"></div>
 
@@ -172,41 +220,44 @@ svg{display:block}
     <a class="rbtn" id="hub" href="../" aria-label="Back to hub"><svg viewBox="0 0 32 32"><path d="M4 16L16 5l12 11" fill="none" stroke="#ff4f94" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 15v12h6v-7h4v7h6V15" fill="#ffc4e4" stroke="#ff4f94" stroke-width="3" stroke-linejoin="round"/></svg></a>
     <button class="rbtn" id="titleMute" aria-label="Sound"></button>
     <div id="logo"><div class="l1"></div><div class="l2"></div></div>
-    <div id="tag">A squishy toy playground!</div>
+    <div id="tag">Squish, boing and giggle!</div>
     <button class="big" id="playBtn"><svg viewBox="0 0 32 32"><path d="M9 4.5v23l19-11.5z" fill="#fff" stroke="rgba(0,0,0,.15)" stroke-width="2" stroke-linejoin="round"/></svg>Play</button>
   </div>
 
   <div id="pause" class="ov scrim hidden"><div class="card">
-    <h2>Paused</h2><p>Buddy is taking a little nap.</p>
+    <h2>Paused</h2>
     <button class="big green" id="resumeBtn"><svg viewBox="0 0 32 32"><path d="M9 4.5v23l19-11.5z" fill="#fff"/></svg>Keep Playing</button>
-    <div class="row2">
-      <button class="big blue" id="pMute"></button>
-      <button class="big yellow" id="pReset"><svg viewBox="0 0 32 32"><path d="M26 16a10 10 0 1 1-3.3-7.4M26 4v7h-7" fill="none" stroke="#7a3d00" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>New Buddy</button>
-    </div>
-    <div class="row2">
-      <button class="big" id="pDone"><svg viewBox="0 0 32 32"><path d="M16 3l3.8 8.2 8.9 1-6.6 6 1.9 8.8L16 22.5 8 27l1.9-8.8-6.6-6 8.9-1z" fill="#fff"/></svg>I'm Done</button>
-      <a class="big blue" id="pHome" href="../"><svg viewBox="0 0 32 32"><path d="M4 16L16 5l12 11M8 15v12h6v-7h4v7h6V15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</a>
-    </div>
+    <div class="row2"><button class="big yellow" id="pDaily">Daily Gift</button><button class="big blue" id="pStats">Statistics</button></div>
+    <div class="row3"><button class="tgl on" id="tMusic"><span>Music On</span></button><button class="tgl on" id="tSpeech"><span>Speech On</span></button><button class="tgl on" id="tVib"><span>Vibrate On</span></button></div>
+    <div class="row2"><button class="big yellow" id="pReset">New Buddy</button><button class="big" id="pDone">I'm Done</button></div>
+    <a class="big blue" id="pHome" href="../">Home</a>
   </div></div>
 
-  <div id="shop" class="ov scrim hidden"><div class="card">
-    <div class="shopHead"><h2>Toy Shop</h2><div class="pill" id="shopCoin" style="margin:0"></div><button class="rbtn" id="shopClose" aria-label="Close"><svg viewBox="0 0 32 32"><path d="M8 8l16 16M24 8L8 24" stroke="#ff4f94" stroke-width="4.5" stroke-linecap="round"/></svg></button></div>
-    <div class="tabs"><button class="tab on" data-t="toys">Toys</button><button class="tab" data-t="rooms">Rooms</button><button class="tab" data-t="outfits">Outfits</button></div>
+  <div id="extras" class="ov scrim hidden"><div class="card">
+    <div class="shopHead"><h2>Extras</h2><div class="pill" id="exCash" style="margin:0"></div><button class="rbtn" id="exClose" aria-label="Close"><svg viewBox="0 0 32 32"><path d="M8 8l16 16M24 8L8 24" stroke="#ff4f94" stroke-width="4.5" stroke-linecap="round"/></svg></button></div>
+    <div class="tabs"><button class="tab on" data-t="shirts">Shirts</button><button class="tab" data-t="looks">Looks</button><button class="tab" data-t="decor">Decor</button></div>
     <div class="grid" id="grid"></div>
   </div></div>
+
+  <div id="stats" class="ov scrim hidden"><div class="card"><h2>Statistics</h2><div id="statRows"></div><button class="big blue" id="statsClose">Close</button></div></div>
+
+  <div id="daily" class="ov scrim hidden"><div class="card"><h2>Daily Gifts</h2><p id="dailyMsg"></p><div id="dayGrid"></div><button class="big yellow" id="claimBtn">Collect Gift!</button><button class="big blue" id="dailyClose">Close</button></div></div>
+
+  <div id="ko" class="ov scrim hidden"><div class="card"><h2>Buddy is knocked out!</h2><p id="koTxt">Bonus cash!</p><div id="koAmt">+100</div>
+    <button class="big green" id="koOk">Collect</button><button class="big yellow" id="koDbl">Spin for x2!</button></div></div>
 
   <div id="done" class="ov scrim hidden"><div class="card">
     <h2>Great playing!</h2><p id="doneMsg">Buddy had so much fun!</p>
     <div class="bigstars" id="bigStars"></div>
-    <div class="stats"><div class="stat"><b id="sHits">0</b><span>giggles</span></div><div class="stat"><b id="sCombo">0</b><span>best combo</span></div><div class="stat"><b id="sCoins">0</b><span>coins won</span></div></div>
-    <button class="big green" id="againBtn"><svg viewBox="0 0 32 32"><path d="M26 16a10 10 0 1 1-3.3-7.4M26 4v7h-7" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Play Again</button>
+    <div class="stats"><div class="stat"><b id="sHits">0</b><span>hits</span></div><div class="stat"><b id="sCombo">0</b><span>best combo</span></div><div class="stat"><b id="sCash">0</b><span>cash won</span></div></div>
+    <button class="big green" id="againBtn">Play Again</button>
     <a class="big blue" href="../">Back to Games</a>
   </div></div>
 
   <div id="level" class="ov scrim hidden"><div class="card">
-    <h2 id="lvTitle">Fun Level 2!</h2><p id="lvMsg">Buddy is SO happy! Bonus coins!</p>
+    <h2 id="lvTitle">Level 2!</h2><p id="lvMsg"></p>
     <div class="bigstars" id="lvStars"></div>
-    <button class="big yellow" id="lvOk">Yay! +25</button>
+    <button class="big yellow" id="lvOk">Yay!</button>
   </div></div>
 </div>
 <script src="../../vendor/matter/matter.min.js"></script>

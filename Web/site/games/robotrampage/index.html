@@ -67,6 +67,12 @@ svg{display:block}
 .pw .bar{width:70px;height:8px}
 .pw.rapid .ic{background:#ff9a3d}.pw.shield .ic{background:#29b9ff}.pw.big .ic{background:#d85bff}
 .pw.rapid .bar i{background:#ff9a3d}.pw.shield .bar i{background:#29b9ff}.pw.big .bar i{background:#d85bff}
+#radar{right:calc(14px + var(--sar));top:calc(94px + var(--sat));width:clamp(104px,19vmin,170px);height:clamp(104px,19vmin,170px);border-radius:50%;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}
+#joy,#joyGhost{position:absolute;border-radius:50%;border:4px solid rgba(255,255,255,.55);background:rgba(255,255,255,.14);box-shadow:0 0 0 6px rgba(255,255,255,.08);display:none}
+#joy.on{display:block}
+#joy i,#joyGhost i{position:absolute;left:50%;top:50%;width:42%;height:42%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ffd1ee 60%,#ff8ac6);transform:translate(-50%,-50%);box-shadow:0 4px 10px rgba(0,0,0,.35)}
+#joyGhost{display:block;left:calc(120px + var(--sal));bottom:calc(36px + var(--sab));width:clamp(110px,18vmin,160px);height:clamp(110px,18vmin,160px);opacity:.45;transition:opacity .2s}
+@media (pointer:fine){#joyGhost{display:none}}
 #crosshair{left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;transition:transform .12s}
 #crosshair svg{width:100%;height:100%;filter:drop-shadow(0 0 6px rgba(0,0,0,.45))}
 #crosshair .c{stroke:#fff;fill:none;stroke-width:3.5;stroke-linecap:round;transition:stroke .1s}
@@ -174,9 +180,11 @@ svg{display:block}
 @media (max-width:520px){
   #hearts{padding:6px 10px}#hearts svg{width:22px;height:22px}
   #scoreBox{font-size:18px;padding:4px 14px}
-  #topC{top:calc(122px + var(--sat));width:72vw}
+  #topC{top:calc(122px + var(--sat))}
   #powers{top:calc(250px + var(--sat))}
   #topR{gap:8px}
+  #topC{left:14px;transform:none;width:calc(100vw - 150px)}
+  #radar{width:92px;height:92px;top:80px}
 }
 #toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:30;padding:10px 24px;font-size:clamp(18px,3vmin,26px);display:none}
 </style>
@@ -207,6 +215,9 @@ svg{display:block}
   <div id="banner"><div class="b1" id="b1"></div><div class="b2" id="b2"></div></div>
   <div id="hint" class="pill"><div class="hand"><svg viewBox="0 0 32 32"><path d="M12 3a2.4 2.4 0 0 1 2.4 2.4V14l1.2-.3a2.2 2.2 0 0 1 2.8 1.6l.3-.1a2.2 2.2 0 0 1 2.8 1.7 2.2 2.2 0 0 1 2.7 2.2l.1 3.6c0 3.5-2.4 6.900-6.400 6.900-3.300 0-4.900-1.400-6.600-3.800L6.100 20.300a2 2 0 0 1 3-2.600l2.500 2.600V5.400A2.400 2.400 0 0 1 12 3z"/></svg></div><div id="hintTxt">Drag to look around<br>Tap or hold FIRE to blast!</div></div>
   <div id="floaters"></div>
+  <canvas id="radar" width="260" height="260"></canvas>
+  <div id="joyGhost"><i></i></div>
+  <div id="joy"><i></i></div>
 </div>
 <div id="hurt"></div><div id="bubble"></div>
 

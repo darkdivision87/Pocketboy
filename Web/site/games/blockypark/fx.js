@@ -11,7 +11,7 @@ export class Particles {
     const m = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, vertexColors: true, uniforms: { px: { value: 600 } },
       vertexShader: 'attribute float size; varying vec3 vC; uniform float px; void main(){ vC=color; vec4 mv=modelViewMatrix*vec4(position,1.); gl_PointSize=size*px/max(.1,-mv.z); gl_Position=projectionMatrix*mv; }',
-      fragmentShader: 'varying vec3 vC; void main(){ vec2 p=gl_PointCoord-.5; float d=length(p); if(d>.5) discard; float a=smoothstep(.5,.15,d); gl_FragColor=vec4(vC,a); #include <colorspace_fragment>\n}',
+      fragmentShader: 'varying vec3 vC; void main(){ vec2 p=gl_PointCoord-.5; float d=length(p); if(d>.5) discard; float a=smoothstep(.5,.15,d); gl_FragColor=vec4(vC,a);\n#include <colorspace_fragment>\n}',
     });
     this.mat = m; this.points = new THREE.Points(g, m); this.points.frustumCulled = false; this.points.renderOrder = 5;
     this.c = new THREE.Color();

@@ -20,7 +20,7 @@ export const CLASSIC_PALS = [
   { body: '#ffd23f', accent: '#ff5d6c', plate: '#fff8d8', dark: '#b58a00' },
 ];
 
-function hex(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+function hex(h) { if (h[0] === 'r') return h.match(/\d+/g).slice(0, 3).map(Number); return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
 export function shade(h, a) { const c = hex(h); const t = a < 0 ? 0 : 255, p = Math.abs(a); return 'rgb(' + c.map((v) => Math.round(v + (t - v) * p)).join(',') + ')'; }
 function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function mk(uw, uh, fn) {
